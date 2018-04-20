@@ -13,25 +13,25 @@ class mapping {
   G g;
 
 public:
-  mapping(F f_, G g_) : f(f_), g(g_) {}
+  constexpr mapping(F f_, G g_) : f(f_), g(g_) {}
 
   template <class T>
-  auto operator()(T x) {
-    return g(f(x));
+  constexpr decltype(auto) operator()(T &&x) {
+    return g(f(std::forward<T>(x)));
   }
 
   template <class H>
-  auto compose(H h) {
+  constexpr auto compose(H h) {
     return functional::mapping{f, g.compose(h)};
   }
 
   template <class H>
-  auto map(H h) {
+  constexpr auto map(H h) {
     return this->compose(functional::mapping{h});
   }
 
   template <class H>
-  auto filter(H h) {
+  constexpr auto filter(H h) {
     return this->compose(functional::filtering{h});
   }
 };
@@ -41,25 +41,25 @@ class mapping<F> {
   F f;
 
 public:
-  mapping(F f_) : f(f_) {}
+  constexpr mapping(F f_) : f(f_) {}
 
   template <class T>
-  auto operator()(T x) {
-    return std::optional{f(x)};
+  constexpr auto operator()(T &&x) {
+    return std::optional{f(std::forward<T>(x))};
   }
 
   template <class G>
-  auto compose(G g) {
+  constexpr auto compose(G g) {
     return functional::mapping{f, g};
   }
 
   template <class G>
-  auto map(G g) {
+  constexpr auto map(G g) {
     return this->compose(functional::mapping{g});
   }
 
   template <class G>
-  auto filter(G g) {
+  constexpr auto filter(G g) {
     return this->compose(functional::filtering{g});
   }
 };
@@ -73,15 +73,15 @@ class filtering {
   G g;
 
 public:
-  filtering(F f_, G g_) : f(f_), g(g_) {}
+  constexpr filtering(F f_, G g_) : f(f_), g(g_) {}
 
   template <class T>
-  auto operator()(T x) {
-    return f(x) ? g(x) : std::nullopt;
+  constexpr decltype(auto) operator()(T &&x) {
+    return f(x) ? g(std::forward<T>(x)) : std::nullopt;
   }
 
   template <class H>
-  auto compose(H h) {
+  constexpr auto compose(H h) {
     return functional::filtering{f, g.compose(h)};
   }
 };
@@ -91,25 +91,25 @@ class filtering<F> {
   F f;
 
 public:
-  filtering(F f_) : f(f_) {}
+  constexpr filtering(F f_) : f(f_) {}
 
   template <class T>
-  std::optional<T> operator()(T x) {
-    return f(x) ? std::optional{x} : std::nullopt;
+  constexpr auto operator()(T &&x) {
+    return f(x) ? std::optional{std::forward<T>(x)} : std::nullopt;
   }
 
   template <class G>
-  auto compose(G g) {
+  constexpr auto compose(G g) {
     return functional::filtering{f, g};
   }
 
   template <class H>
-  auto map(H h) {
+  constexpr auto map(H h) {
     return this->compose(functional::mapping{h});
   }
 
   template <class H>
-  auto filter(H h) {
+  constexpr auto filter(H h) {
     return this->compose(functional::filtering{h});
   }
 };
