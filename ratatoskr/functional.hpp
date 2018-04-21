@@ -1,5 +1,16 @@
 #include <optional>
 
+#define RATATOSKR_THUNK_COMPOSE                                                \
+  template <class G_>                                                          \
+  constexpr auto map(G_ g_) {                                                  \
+    return this->compose(functional::mapping{g_});                             \
+  }                                                                            \
+                                                                               \
+  template <class G_>                                                          \
+  constexpr auto filter(G_ g_) {                                               \
+    return this->compose(functional::filtering{g_});                           \
+  }
+
 namespace ratatoskr::functional {
 
 template <class F, class G = void>
@@ -29,15 +40,7 @@ public:
     return functional::mapping{f, g.compose(h)};
   }
 
-  template <class H>
-  constexpr auto map(H h) {
-    return this->compose(functional::mapping{h});
-  }
-
-  template <class H>
-  constexpr auto filter(H h) {
-    return this->compose(functional::filtering{h});
-  }
+  RATATOSKR_THUNK_COMPOSE
 };
 
 template <class F>
@@ -57,15 +60,7 @@ public:
     return functional::mapping{f, g};
   }
 
-  template <class G>
-  constexpr auto map(G g) {
-    return this->compose(functional::mapping{g});
-  }
-
-  template <class G>
-  constexpr auto filter(G g) {
-    return this->compose(functional::filtering{g});
-  }
+  RATATOSKR_THUNK_COMPOSE
 };
 
 template <class F>
@@ -89,15 +84,7 @@ public:
     return functional::filtering{f, g.compose(h)};
   }
 
-  template <class H>
-  constexpr auto map(H h) {
-    return this->compose(functional::mapping{h});
-  }
-
-  template <class H>
-  constexpr auto filter(H h) {
-    return this->compose(functional::filtering{h});
-  }
+  RATATOSKR_THUNK_COMPOSE
 };
 
 template <class F>
@@ -117,15 +104,7 @@ public:
     return functional::filtering{f, g};
   }
 
-  template <class G>
-  constexpr auto map(G g) {
-    return this->compose(functional::mapping{g});
-  }
-
-  template <class G>
-  constexpr auto filter(G g) {
-    return this->compose(functional::filtering{g});
-  }
+  RATATOSKR_THUNK_COMPOSE
 };
 
 template <class F>
@@ -148,15 +127,7 @@ public:
     return functional::thunk{f.compose(g)};
   }
 
-  template <class G>
-  constexpr auto map(G g) {
-    return this->compose(functional::mapping{g});
-  }
-
-  template <class G>
-  constexpr auto filter(G g) {
-    return this->compose(functional::filtering{g});
-  }
+  RATATOSKR_THUNK_COMPOSE
 };
 
 template <>
@@ -174,15 +145,7 @@ public:
     return functional::thunk{f};
   }
 
-  template <class F>
-  constexpr auto map(F f) {
-    return this->compose(functional::mapping{f});
-  }
-
-  template <class F>
-  constexpr auto filter(F f) {
-    return this->compose(functional::filtering{f});
-  }
+  RATATOSKR_THUNK_COMPOSE
 };
 
 thunk()->thunk<void>;
