@@ -1,10 +1,10 @@
 ![Ratatoskr](https://raw.githubusercontent.com/GobanTKG/Ratatoskr-cpp/medias/medias/Ratatoskr_logo.png)
-## a compact Functional/Reactive/Concurrent utilitiy library on C++17
+## A compact Functional/Reactive/Concurrent utilitiy library on C++17
 
 ## `ratatoskr::functional::thunk<F>`
 * A class template that provides map or filter function composition.
 * The invoke result is wrapped in std::optional.
-* Every method donesn't make any change to the original object but return a new object.
+* Every method donesn't make any change to the original thunk but return a new thunk.
 
 example:
 
