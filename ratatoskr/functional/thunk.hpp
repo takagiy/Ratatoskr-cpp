@@ -1,11 +1,15 @@
 #include <optional>
 
 namespace ratatoskr::functional {
+
 template <class F, class G = void>
 class mapping;
 
 template <class F, class G = void>
 class filtering;
+
+template <class F = void>
+class thunk;
 
 template <class F, class G>
 class mapping {
@@ -37,7 +41,7 @@ public:
 };
 
 template <class F>
-class mapping<F> {
+class mapping<F, void> {
   F f;
 
 public:
@@ -84,10 +88,20 @@ public:
   constexpr auto compose(H h) {
     return functional::filtering{f, g.compose(h)};
   }
+
+  template <class H>
+  constexpr auto map(H h) {
+    return this->compose(functional::mapping{h});
+  }
+
+  template <class H>
+  constexpr auto filter(H h) {
+    return this->compose(functional::filtering{h});
+  }
 };
 
 template <class F>
-class filtering<F> {
+class filtering<F, void> {
   F f;
 
 public:
@@ -103,17 +117,73 @@ public:
     return functional::filtering{f, g};
   }
 
-  template <class H>
-  constexpr auto map(H h) {
-    return this->compose(functional::mapping{h});
+  template <class G>
+  constexpr auto map(G g) {
+    return this->compose(functional::mapping{g});
   }
 
-  template <class H>
-  constexpr auto filter(H h) {
-    return this->compose(functional::filtering{h});
+  template <class G>
+  constexpr auto filter(G g) {
+    return this->compose(functional::filtering{g});
   }
 };
 
 template <class F>
 filtering(F)->filtering<F, void>;
+
+template <class F>
+class thunk {
+  F f;
+
+public:
+  constexpr thunk(F f_) : f(f_) {}
+
+  template <class T>
+  constexpr auto operator()(T &&x) {
+    return f(std::forward<T>(x));
+  }
+
+  template <class G>
+  constexpr auto compose(G g) {
+    return functional::thunk{f.compose(g)};
+  }
+
+  template <class G>
+  constexpr auto map(G g) {
+    return this->compose(functional::mapping{g});
+  }
+
+  template <class G>
+  constexpr auto filter(G g) {
+    return this->compose(functional::filtering{g});
+  }
+};
+
+template <>
+class thunk<void> {
+public:
+  constexpr thunk() {}
+
+  template <class T>
+  constexpr auto operator()(T &&x) {
+    return f(std::forward<T>(x));
+  }
+
+  template <class F>
+  constexpr auto compose(F f) {
+    return functional::thunk{f};
+  }
+
+  template <class F>
+  constexpr auto map(F f) {
+    return this->compose(functional::mapping{f});
+  }
+
+  template <class F>
+  constexpr auto filter(F f) {
+    return this->compose(functional::filtering{f});
+  }
+};
+
+thunk()->thunk<void>;
 } // namespace ratatoskr::functional
