@@ -1,6 +1,8 @@
 #include <optional>
 
-#define RATATOSKR_THUNK_COMPOSE                                                \
+#ifndef RATATOSKR_FUNCTIONAL_HPP
+#define RATATOSKR_FUNCTIONAL_HPP
+#define COMPOSE_IMPL                                                           \
   template <class G_>                                                          \
   constexpr auto map(G_ g_) {                                                  \
     return this->compose(functional::mapping{g_});                             \
@@ -40,7 +42,7 @@ public:
     return functional::mapping{f, g.compose(h)};
   }
 
-  RATATOSKR_THUNK_COMPOSE
+  COMPOSE_IMPL
 };
 
 template <class F>
@@ -60,7 +62,7 @@ public:
     return functional::mapping{f, g};
   }
 
-  RATATOSKR_THUNK_COMPOSE
+  COMPOSE_IMPL
 };
 
 template <class F>
@@ -84,7 +86,7 @@ public:
     return functional::filtering{f, g.compose(h)};
   }
 
-  RATATOSKR_THUNK_COMPOSE
+  COMPOSE_IMPL
 };
 
 template <class F>
@@ -104,7 +106,7 @@ public:
     return functional::filtering{f, g};
   }
 
-  RATATOSKR_THUNK_COMPOSE
+  COMPOSE_IMPL
 };
 
 template <class F>
@@ -127,7 +129,7 @@ public:
     return functional::thunk{f.compose(g)};
   }
 
-  RATATOSKR_THUNK_COMPOSE
+  COMPOSE_IMPL
 };
 
 template <>
@@ -145,8 +147,10 @@ public:
     return functional::thunk{f};
   }
 
-  RATATOSKR_THUNK_COMPOSE
+  COMPOSE_IMPL
 };
 
 thunk()->thunk<void>;
 } // namespace ratatoskr::functional
+#undef COMPOSE_IMPL
+#endif
