@@ -1,4 +1,5 @@
 #include <optional>
+#include <utility>
 
 #ifndef RATATOSKR_FUNCTIONAL_HPP
 #define RATATOSKR_FUNCTIONAL_HPP
