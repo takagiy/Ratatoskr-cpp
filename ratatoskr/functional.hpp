@@ -2,7 +2,7 @@
 
 #ifndef RATATOSKR_FUNCTIONAL_HPP
 #define RATATOSKR_FUNCTIONAL_HPP
-#define COMPOSE_IMPL                                                           \
+#define RATATOSKR_COMPOSITION_IMPL                                             \
   template <class G_>                                                          \
   constexpr auto map(G_ &&g_) {                                                \
     return this->compose(functional::mapping{std::forward<G_>(g_)});           \
@@ -45,7 +45,7 @@ public:
     return functional::mapping{f, g.compose(std::forward<H>(h))};
   }
 
-  COMPOSE_IMPL
+  RATATOSKR_COMPOSITION_IMPL
 };
 
 template <class F>
@@ -66,7 +66,7 @@ public:
     return functional::mapping{f, std::forward<G>(g)};
   }
 
-  COMPOSE_IMPL
+  RATATOSKR_COMPOSITION_IMPL
 };
 
 template <class F>
@@ -93,7 +93,7 @@ public:
     return functional::filtering{f, g.compose(std::forward<H>(h))};
   }
 
-  COMPOSE_IMPL
+  RATATOSKR_COMPOSITION_IMPL
 };
 
 template <class F>
@@ -114,7 +114,7 @@ public:
     return functional::filtering{f, std::forward<G>(g)};
   }
 
-  COMPOSE_IMPL
+  RATATOSKR_COMPOSITION_IMPL
 };
 
 template <class F>
@@ -138,7 +138,7 @@ public:
     return functional::thunk{f.compose(std::forward<G>(g))};
   }
 
-  COMPOSE_IMPL
+  RATATOSKR_COMPOSITION_IMPL
 };
 
 template <>
@@ -156,10 +156,10 @@ public:
     return functional::thunk{std::forward<F>(f)};
   }
 
-  COMPOSE_IMPL
+  RATATOSKR_COMPOSITION_IMPL
 };
 
 thunk()->thunk<void>;
 } // namespace ratatoskr::functional
-#undef COMPOSE_IMPL
+#undef RATATOSKR_COMPOSITION_IMPL
 #endif
