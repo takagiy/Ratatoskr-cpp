@@ -111,9 +111,11 @@ public:
     std::lock_guard lock{state->data_mutex};
     if (state->has_receiver_v) {
       throw receiver_already_retrived{"receiver::receiver"};
-    } else if (state->is_closed_v) {
+    }
+    else if (state->is_closed_v) {
       throw channel_already_closed{"receiver::receiver"};
-    } else {
+    }
+    else {
       state->has_receiver_v = true;
     }
   }
