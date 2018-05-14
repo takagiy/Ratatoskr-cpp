@@ -44,12 +44,15 @@ f(2) //=> print 1. return optional(1).
 * `receiver::next() -> T`
     Take the data that was sent to the channel in the same order as it was sent. If the channel is empty, block the thread until the new data is sent. When the channel is closed, throw `ratatoskr::concurrent::close_channel`.
 
-## `ratatoskr::make_channel<T>() -> std::pair<sender<T>, receiver<T>>`
+## `ratatoskr::concurrent::make_channel<T>() -> std::pair<sender<T>, receiver<T>>`
 * A helper function that creates pair of sender and receiver.
 
 example:
 
 ```cpp
+using namespace ratatoskr::concurrent;
+using namespace std::chrono_literals;
+
 auto [sn, rc] = make_channel<int>();
 
 auto produce = [](auto sn) {
