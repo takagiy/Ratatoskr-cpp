@@ -10,35 +10,30 @@ int main() {
 
   auto [sn, rc] = make_channel<int>();
 
-  std::mutex io_mutex;
+  auto log = [](auto tag, auto x) {
+    static std::mutex io_mutex;
+    std::lock_guard lock{io_mutex};
+    std::cout << tag << ": " << x << std::endl;
+  };
 
-  auto produce = [&io_mutex](auto sn) {
+  auto produce = [&log](auto sn) {
     for (int i = 0; i < 10; ++i) {
-      {
-        std::lock_guard lock{io_mutex};
-        std::cout << "send: " << i << std::endl;
-      }
+      log("send", i);
       sn.push(i);
       std::this_thread::sleep_for(1s);
     }
-    {
-      std::lock_guard lock{io_mutex};
-      std::cout << "send: close" << std::endl;
-    }
+    log("send", "close");
     sn.close();
   };
 
-  auto consume = [&io_mutex](auto rc) {
+  auto consume = [&log](auto rc) {
     try {
       while (true) {
-        auto &&x = rc.next();
-        std::lock_guard lock{io_mutex};
-        std::cout << "recieve: " << x << std::endl;
+        log("receive", rc.next());
       }
     }
     catch (const close_channel &) {
-      std::lock_guard lock{io_mutex};
-      std::cout << "receive: close" << std::endl;
+      log("receive", "close");
     }
   };
 

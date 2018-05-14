@@ -69,7 +69,7 @@ auto consume = [](auto rc) {
       std::cout << rc.next() << std::endl;
     }
   }
-  catch (const close_channel &_) {
+  catch (const close_channel &) {
   }
 };
 
