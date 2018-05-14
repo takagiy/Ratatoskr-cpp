@@ -2,6 +2,7 @@
 #include <forward_list>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <utility>
 
 #ifndef RATATOSKR_CONCURRENT_HPP
@@ -67,7 +68,7 @@ public:
     }
   }
 
-  bool avail() { return state.use_count() != 0; }
+  bool avail() const { return state.use_count() != 0; }
 
   void push(const T &x) {
     {
@@ -103,11 +104,10 @@ public:
 template <class T>
 class receiver {
   std::shared_ptr<channel_state<T>> state;
-  typename std::forward_list<T>::iterator iterator;
+  std::optional<typename std::forward_list<T>::iterator> iterator;
 
 public:
-  receiver(const std::shared_ptr<channel_state<T>> &state)
-      : state(state), iterator(state->last) {
+  receiver(const std::shared_ptr<channel_state<T>> &state) : state(state) {
     std::lock_guard lock{state->data_mutex};
     if (state->has_receiver_v) {
       throw receiver_already_retrived{"receiver::receiver"};
@@ -116,6 +116,7 @@ public:
       throw channel_already_closed{"receiver::receiver"};
     }
     else {
+      iterator = state->last;
       state->has_receiver_v = true;
     }
   }
@@ -125,12 +126,12 @@ public:
   receiver(receiver &&) = default;
   receiver &operator=(receiver &&) = default;
 
-  bool avail() { return state.use_count() != 0; }
+  bool avail() const { return state.use_count() != 0; }
 
   T next() {
     std::unique_lock lock{state->data_mutex};
     state->notifier.wait(lock, [this] {
-      auto next = iterator;
+      auto next = *iterator;
       return ++next != state->data.end() || state->is_closed_v;
     });
 
@@ -138,8 +139,8 @@ public:
       throw close_channel{};
     }
 
-    ++iterator;
-    return *iterator;
+    ++*iterator;
+    return **iterator;
   }
 };
 
