@@ -96,7 +96,7 @@ public:
       std::lock_guard lock{state->data_mutex};
       state->is_closed_v = true;
     }
-    state->notifier.notify_one();
+    state->notifier.notify_all();
   }
 };
 
