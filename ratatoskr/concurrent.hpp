@@ -21,6 +21,9 @@ class sender;
 template <class T>
 class receiver;
 
+template <class T>
+class shared_receiver;
+
 class close_channel : public std::exception {
   const char *what() const noexcept { return "close_channel"; }
 };
@@ -144,8 +147,10 @@ public:
   }
 };
 
-template <class T>
-auto make_channel() {
+template
+
+    template <class T>
+    auto make_channel() {
   channel<T> ch;
   return std::pair{ch.get_sender(), ch.get_receiver()};
 }
