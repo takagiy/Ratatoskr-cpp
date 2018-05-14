@@ -36,6 +36,13 @@ class receiver_already_retrived : public std::logic_error {
   using std::logic_error::logic_error;
 };
 
+struct with_shared_receiver_t {
+  explicit with_shared_receiver_t() = default;
+};
+
+inline constexpr with_shared_receiver_t with_shared_receiver =
+    with_shared_receiver_t();
+
 template <class T>
 struct channel_state {
   bool has_receiver_v;
@@ -145,14 +152,31 @@ public:
     ++*iterator;
     return **iterator;
   }
+
+  shared_receiver<T> share() { return shared_receiver<T>{std::move(*this)}; }
 };
 
-template
+template <class T>
+class shared_receiver {
+  std::shared_ptr<receiver<T>> receiver_;
 
-    template <class T>
-    auto make_channel() {
+public:
+  shared_receiver(receiver<T> &&receiver_)
+      : receiver_(std::make_shared<receiver<T>>(std::move(receiver_))) {}
+
+  T next() { return receiver_->next(); }
+};
+
+template <class T>
+auto make_channel() {
   channel<T> ch;
   return std::pair{ch.get_sender(), ch.get_receiver()};
+}
+
+template <class T>
+auto make_channel(with_shared_receiver_t) {
+  channel<T> ch;
+  return std::pair{ch.get_sender(), ch.get_receiver().share()};
 }
 
 } // namespace ratatoskr::concurrent

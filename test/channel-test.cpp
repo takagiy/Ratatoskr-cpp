@@ -1,6 +1,7 @@
 #include "../ratatoskr/concurrent.hpp"
 #include <chrono>
 #include <iostream>
+#include <mutex>
 #include <thread>
 
 int main() {
@@ -9,21 +10,35 @@ int main() {
 
   auto [sn, rc] = make_channel<int>();
 
-  auto produce = [](auto sn) {
+  std::mutex io_mutex;
+
+  auto produce = [&io_mutex](auto sn) {
     for (int i = 0; i < 10; ++i) {
+      {
+        std::lock_guard lock{io_mutex};
+        std::cout << "send: " << i << std::endl;
+      }
       sn.push(i);
       std::this_thread::sleep_for(1s);
+    }
+    {
+      std::lock_guard lock{io_mutex};
+      std::cout << "send: close" << std::endl;
     }
     sn.close();
   };
 
-  auto consume = [](auto rc) {
+  auto consume = [&io_mutex](auto rc) {
     try {
       while (true) {
-        std::cout << rc.next() << std::endl;
+        auto &&x = rc.next();
+        std::lock_guard lock{io_mutex};
+        std::cout << "recieve: " << x << std::endl;
       }
     }
-    catch (const close_channel &_) {
+    catch (const close_channel &) {
+      std::lock_guard lock{io_mutex};
+      std::cout << "receive: close" << std::endl;
     }
   };
 
