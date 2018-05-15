@@ -47,12 +47,13 @@ template <class T>
 struct channel_state {
   bool has_receiver_v;
   bool is_closed_v;
-  std::forward_list<T> data;
+  std::forward_list<std::optional<T>> data;
   mutable std::mutex data_mutex;
-  typename std::forward_list<T>::iterator last;
+  typename std::forward_list<std::optional<T>>::iterator last;
   std::condition_variable notifier;
 
-  channel_state() : is_closed_v(false), last(data.before_begin()) {}
+  channel_state()
+      : is_closed_v(false), data{std::nullopt}, last(data.begin()) {}
 };
 
 template <class T>
@@ -64,6 +65,8 @@ public:
 
   sender<T> get_sender() { return sender<T>{state}; }
   receiver<T> get_receiver() { return receiver<T>{state}; }
+
+  [[deprecated("It's only for a test.")]] auto get_state() { return state; }
 };
 
 template <class T>
@@ -114,7 +117,8 @@ public:
 template <class T>
 class receiver {
   std::shared_ptr<channel_state<T>> state;
-  std::optional<typename std::forward_list<T>::iterator> iterator;
+  std::optional<typename std::forward_list<std::optional<T>>::iterator>
+      iterator;
 
 public:
   receiver(const std::shared_ptr<channel_state<T>> &state) : state(state) {
@@ -150,7 +154,8 @@ public:
     }
 
     ++*iterator;
-    return **iterator;
+    state->data.pop_front();
+    return ***iterator;
   }
 
   shared_receiver<T> share() { return shared_receiver<T>{std::move(*this)}; }
