@@ -1,17 +1,19 @@
 ![Ratatoskr](https://raw.githubusercontent.com/GobanTKG/Ratatoskr-cpp/medias/medias/Ratatoskr_logo.png)
-## A compact Functional/Reactive/Concurrent utility library on C++17
+A compact Functional/Reactive/Concurrent utility library on C++17.
 
 ## namespace `ratatoskr::functional`
 
+### class template `thunk<F>`
+
+A class template that provides map or filter function composition.
+
 <table>
   <tr>
-    <th>class</th>
     <th>method</th>
     <th>signature</th>
     <th>description</th>
   </tr>
   <tr>
-    <td rowspan="4"><code>thunk&lt;F&gt;</code></td>
     <td>map</td>
     <td><code>(G g)</code> -&gt; <code>thunk&lt;H&gt;</code></td>
     <td>Return a new thunk compounded a map functor g.</td>
@@ -23,17 +25,17 @@
   </tr>
   <tr>
     <td rowspan="2">operator()</td>
-    <td><code>(const T &x)</code> -&gt; <code>std::optional<R></code></td>
+    <td><code>(const T &x)</code> -&gt; <code>std::optional&lt;R&gt;</code></td>
     <td rowspan="2">Invoke the composed function passing an argument x then return the result wrapped in <code>std::optional</code>.</td>
   </tr>
   <tr>
-    <td><code>(T &&x)</code> -&gt; <code>std::optional<R></code></td>
+    <td><code>(T &&x)</code> -&gt; <code>std::optional&lt;R&gt;</code></td>
   </tr>
 </table>
 
 example: 
 
-```c++
+```C++
 using namespace::ratatoskr::functional;
 
 auto even = [](auto n) { return n % 2 == 0; };
@@ -44,7 +46,7 @@ auto f = thunk{}
            .map([](auto n) {
               cout << n << endl;
               return n;
-            })
+           })
            .map([](auto n) { return n / 2; })
            .filter([](auto n) { return n > 5; });
 
@@ -56,15 +58,18 @@ f(12); // Print "12", then return std::optional{6}.
 
 ## namespace `ratatoskr::concurrent`
 
+### class template `channel<T>`
+
+A class template that provides inter-thread communication.
+A channel can have multiple senders and only one receiver.
+
 <table>
   <tr>
-    <th>class</th>
     <th>method</th>
     <th>signature</th>
     <th>description</th>
   </tr>
   <tr>
-    <td rowspan="5"><code>channel&lt;T&gt;</code></td>
     <td>get_receiver</td>
     <td><code>()</code> -&gt; <code>receiver&lt;T&gt;</code></td>
     <td>Get the receiver. If the receiver is already got, throw <code>ratatoskr::concurrent::receiver_already_retrieved</code>.If the channel is closed, throw <code>ratatoskr::concurrent::channel_already_closed</code>.</td>
@@ -77,7 +82,7 @@ f(12); // Print "12", then return std::optional{6}.
   <tr>
     <td rowspan="2">push</td>
     <td><code>(const T &x)</code> -&gt; <code>void</code></td>
-    <td rowspan="2">Send a value to the channel.</td>
+    <td rowspan="2">Send a value to the channel then notify the receiver.</td>
   </tr>
   <tr>
    <td><code>(T &&x)</code> -&gt; <code>void</code></td>
@@ -85,22 +90,24 @@ f(12); // Print "12", then return std::optional{6}.
   <tr>
    <td>close</td>
    <td><code>()</code> -&gt; <code>void</code></td>
-   <td>Close the channel.</td>
+   <td>Close the channel then notify the receiver.</td>
   </tr>
 </table>
 
+### class template `sender<T>`
+
+You can get it by `channel<T>::get_sender()`.
+
 <table>
   <tr>
-    <th>class</th>
     <th>method</th>
     <th>signature</th>
     <th>description</th>
   </tr>
   <tr>
-    <td rowspan="3"><code>sender&lt;T&gt;</code></td>
     <td rowspan="2">push</td>
     <td><code>(const T &x)</code> -&gt; <code>void</code></td>
-    <td rowspan="2">Send a value to the channel.</td>
+    <td rowspan="2">Send a value to the channel then notify the receiver.</td>
   </tr>
   <tr>
    <td><code>(T &&x)</code> -&gt; <code>void</code></td>
@@ -108,19 +115,22 @@ f(12); // Print "12", then return std::optional{6}.
   <tr>
    <td>close</td>
    <td><code>()</code> -&gt; <code>void</code></td>
-   <td>Close the channel.</td>
+   <td>Close the channel then notify the receiver.</td>
   </tr>
 </table>
 
+### class template `receiver<T>`
+
+You can get it by `channel<T>::get_receiver()`.
+The receiver is non-copyable but moveable.
+
 <table>
   <tr>
-    <th>class</th>
     <th>method</th>
     <th>signature</th>
     <th>description</th>
   </tr>
   <tr>
-    <td rowspan="2"><code>receiver&lt;T&gt;</code></td>
     <td>next</td>
     <td><code>()</code> -&gt; <code>T</code></td>
     <td>Take the value sent to the channel one by one as same order as it was sent.If the channel is empty, block the thread until new value is sent.When the channel is closed, throw <code>ratatoskr::concurrent::close_channel</code>.</td>
@@ -131,6 +141,25 @@ f(12); // Print "12", then return std::optional{6}.
    <td>Return shared_receiver and invalidate this receiver.</td>
   </tr>
 </table>
+
+### class template `shared_receiver<T>`
+
+The shared_receiver is a copyable receiver.Even if there are multiple shared_receiver, a sent value will received only one time on only one shared_receiver.It is useful for processing sent value on multiple threads.
+
+<table>
+  <tr>
+    <th>method</th>
+    <th>signature</th>
+    <th>description</th>
+  </tr>
+  <tr>
+    <td>next</td>
+    <td><code>()</code> -&gt; <code>T</code></td>
+    <td>Take the value sent to the channel one by one as same order as it was sent.If the channel is empty, block the thread until new value is sent.When the channel is closed, throw <code>ratatoskr::concurrent::close_channel</code>.</td>
+  </tr>
+</table>
+
+### helper function
 
 <table>
   <tr>
@@ -151,7 +180,7 @@ f(12); // Print "12", then return std::optional{6}.
 
 example:
 
-```c++
+```C++
 using namespace ratatoskr::concurrent;
 using namespace std::chrono_literals;
 
