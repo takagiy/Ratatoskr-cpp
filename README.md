@@ -1,5 +1,5 @@
 ![Ratatoskr](https://raw.githubusercontent.com/GobanTKG/Ratatoskr-cpp/medias/medias/Ratatoskr_logo.png)
-## A compact Functional/Reactive/Concurrent utilitiy library on C++17
+## A compact Functional/Reactive/Concurrent utility library on C++17
 
 ## namespace `ratatoskr::functional`
 
@@ -67,12 +67,12 @@ f(12); // Print "12", then return std::optional{6}.
     <td rowspan="5"><code>channel&lt;T&gt;</code></td>
     <td>get_receiver</td>
     <td><code>()</code> -&gt; <code>receiver&lt;T&gt;</code></td>
-    <td>Get the receiver. If the receiver is already got, throw <code>ratatoskr::concurrent::receiver_alredy_retrieved</code>.If the chanell is closed, throw <code>ratatoskr::concurrent::channel_already_closed</code>.</td>
+    <td>Get the receiver. If the receiver is already got, throw <code>ratatoskr::concurrent::receiver_already_retrieved</code>.If the channel is closed, throw <code>ratatoskr::concurrent::channel_already_closed</code>.</td>
   </tr>
   <tr>
     <td>get_sender</td>
     <td><code>()</code> -&gt; <code>sender&lt;T&gt;</code></td>
-    <td>Get the sender. If the channel is closed, throw <code>ratatoskr::concurrent::channel_alredy_closed</code>.</td>
+    <td>Get the sender. If the channel is closed, throw <code>ratatoskr::concurrent::channel_already_closed</code>.</td>
   </tr>
   <tr>
     <td rowspan="2">push</td>
@@ -120,7 +120,7 @@ f(12); // Print "12", then return std::optional{6}.
     <th>description</th>
   </tr>
   <tr>
-    <td rowspan="2"><code>reciever&lt;T&gt;</code></td>
+    <td rowspan="2"><code>receiver&lt;T&gt;</code></td>
     <td>next</td>
     <td><code>()</code> -&gt; <code>T</code></td>
     <td>Take the value sent to the channel one by one as same order as it was sent.If the channel is empty, block the thread until new value is sent.When the channel is closed, throw <code>ratatoskr::concurrent::close_channel</code>.</td>
@@ -128,7 +128,7 @@ f(12); // Print "12", then return std::optional{6}.
   <tr>
    <td>share</td>
    <td><code>()</code> -&gt; <code>shared_receiver&lt;T&gt;</code></td>
-   <td>Return shared_receier and invalidate this receier.</td>
+   <td>Return shared_receiver and invalidate this receiver.</td>
   </tr>
 </table>
 
