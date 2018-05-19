@@ -88,6 +88,13 @@ public:
     }
     state->notifier.notify_one();
   }
+  void close() {
+    {
+      std::lock_guard lock{state->data_mutex};
+      state->is_closed_v = true;
+    }
+    state->notifier.notify_all();
+  }
 
   [[deprecated("It's only for a test.")]] auto get_state() { return state; }
 };
