@@ -44,11 +44,9 @@ auto f = thunk{}
            .map([](auto n) {
               cout << n << endl;
               return n;
-           })
+            })
            .map([](auto n) { return n / 2; })
-           .filter([](auto n) {
-             return n > 5;
-           });
+           .filter([](auto n) { return n > 5; });
 
 f(10); // Print "10", then return std::nullopt.
 f(11); // Return std::nullopt.
@@ -69,7 +67,7 @@ f(12); // Print "12", then return std::optional{6}.
     <td rowspan="5"><code>channel&lt;T&gt;</code></td>
     <td>get_receiver</td>
     <td><code>()</code> -&gt; <code>receiver&lt;T&gt;</code></td>
-    <td>Get the receiver. If the receiver is already got, throw <code>ratatoskr::concurrent::receiver_alredy_retrieved</code>.If the chanell is closed, throw </code>ratatoskr::concurrent::channel_already_closed</code>.</td>
+    <td>Get the receiver. If the receiver is already got, throw <code>ratatoskr::concurrent::receiver_alredy_retrieved</code>.If the chanell is closed, throw <code>ratatoskr::concurrent::channel_already_closed</code>.</td>
   </tr>
   <tr>
     <td>get_sender</td>
@@ -142,11 +140,11 @@ f(12); // Print "12", then return std::optional{6}.
   </tr>
   <tr>
     <td rowspan="2"><code>make_channel&lt;T&gt;</code></td>
-    <td><code>()</code> -&gt; <code>std::pair<sender&lt;T&gt;, receiver&lt;T&gt;></code></td>
+    <td><code>()</code> -&gt; <code>std::pair&lt;sender&lt;T&gt;, receiver&lt;T&gt;&gt;</code></td>
     <td>Create a pair of <code>sender&lt;T&gt;</code> and <code>receiver&lt;T&gt;</code>.</td>
   </tr>
   <tr>
-    <td><code>(with_shared_receiver_t)</code> -&gt; <code>std::pair<sender&lt;T&gt;, shared_receiver&lt;T&gt;></code></td>
+    <td><code>(with_shared_receiver_t)</code> -&gt; <code>std::pair&lt;sender&lt;T&gt;, shared_receiver&lt;T&gt;&gt;</code></td>
     <td>When passed <code>with_shared_receiver</code>, share the receiver.</td>
   </tr>
 <table>
