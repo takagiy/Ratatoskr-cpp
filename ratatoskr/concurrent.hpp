@@ -66,6 +66,29 @@ public:
   sender<T> get_sender() { return sender<T>{state}; }
   receiver<T> get_receiver() { return receiver<T>{state}; }
 
+  void push(const T &x) {
+    {
+      std::lock_guard lock{state->data_mutex};
+      if (!state->has_receiver_v) {
+        return;
+      }
+      state->data.insert_after(state->last, x);
+      ++state->last;
+    }
+    state->notifier.notify_one();
+  }
+  void push(T &&x) {
+    {
+      std::lock_guard lock{state->data_mutex};
+      if (!state->has_receiver_v) {
+        return;
+      }
+      state->data.insert_after(state->last, std::move(x));
+      ++state->last;
+    }
+    state->notifier.notify_one();
+  }
+
   [[deprecated("It's only for a test.")]] auto get_state() { return state; }
 };
 

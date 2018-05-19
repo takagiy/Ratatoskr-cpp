@@ -1,55 +1,159 @@
 ![Ratatoskr](https://raw.githubusercontent.com/GobanTKG/Ratatoskr-cpp/medias/medias/Ratatoskr_logo.png)
 ## A compact Functional/Reactive/Concurrent utilitiy library on C++17
 
-## `ratatoskr::functional::thunk<F>`
-* A class template that provides map or filter function composition.
-* The invoke result is wrapped in std::optional.
-* Every method donesn't make any change to the original thunk but return a new thunk.
+## namespace `ratatoskr::functional`
 
-example:
+<table>
+  <tr>
+    <th>class</th>
+    <th>method</th>
+    <th>signature</th>
+    <th>description</th>
+  </tr>
+  <tr>
+    <td rowspan="4">`thunk<F>`</td>
+    <td>map</td>
+    <td>`(G g)` -&gt; `thunk<H>`</td>
+    <td>Return a new thunk compounded a map functor g.</td>
+  </tr>
+  <tr>
+    <td>filter</td>
+    <td>`(G g)` -&gt; `thunk<H>`</td>
+    <td>Return a new thunk compounded a filter functor g.</td>
+  </tr>
+  <tr>
+    <td rowspan="2">operator()</td>
+    <td>`(const T &x)` -&gt; `std::optional<R>`</td>
+    <td rowspan="2">Invoke the composed function passing an argument x then return the result wrapped in `std::optional`.</td>
+  </tr>
+  <tr>
+    <td>`(T &&x)` -&gt; `std::optional<R>`</td>
+  </tr>
+</table>
 
-```cpp
-auto even = [](auto n) { retrun n % 2 == 0; };
+example: 
+
+```c++
+using namespace::ratatoskr::functional;
+
+auto even = [](auto n) { return n % 2 == 0; };
+
 
 auto f = thunk{}
            .filter(even)
-           .map([](auto n) { return n / 2; })
            .map([](auto n) {
-             cout << n << endl;
-             return n;
+              cout << n << endl;
+              return n;
+           })
+           .map([](auto n) { return n / 2; })
+           .filter([](auto n) {
+             return n > 5;
            });
 
-f(0) //=> print 0. return optional(0).
-f(1) //=> return nullopt.
-f(2) //=> print 1. return optional(1).
+f(10); // Print "10", then return std::nullopt.
+f(11); // Return std::nullopt.
+f(12); // Print "12", then return std::optional{6}.
 ```
 
-## `ratatoskr::concurrent::channel<T>`
-* A class template that provides inter-thread communication.
-* A channel is able to have some senders and only one receiver.
-* `channel::get_sender()` 
-    If the channel is already closed, throw `ratatoskr::concurrent::channel_already_closed`.
-* `channel::get_receiver()`
-    If the channel is already closed, throw `ratatoskr::concurrent::channel_already_closed`.
-    If the receiver is already got, throw `ratatoskr::concurrent::receiver_already_retrieved`.
 
-## `ratatoskr::concurrent::sender<T>`
-* `sender::push(const T & / T &&)`
-    Send an object to the channel.
-* `sender::close()`
-    Close the channel then notify the receiver.
+## namespace `ratatoskr::concurrent`
 
-## `ratatoskr::concurrent::receiver<T>`
-* Non-copyable but movable.
-* `receiver::next() -> T`
-    Take the data that was sent to the channel in the same order as it was sent. If the channel is empty, block the thread until the new data is sent. When the channel is closed, throw `ratatoskr::concurrent::close_channel`.
+<table>
+  <tr>
+    <th>class</th>
+    <th>method</th>
+    <th>signature</th>
+    <th>description</th>
+  </tr>
+  <tr>
+    <td rowspan="5">`channel<T>`</td>
+    <td>get_receiver</td>
+    <td>`()` -&gt; `receiver<T>`</td>
+    <td>Get the receiver. If the receiver is already got, throw `ratatoskr::concurrent::receiver_alredy_retrieved`.If the chanell is closed, throw `ratatoskr::concurrent::channel_already_closed`.</td>
+  </tr>
+  <tr>
+    <td>get_sender</td>
+    <td>`()` -&gt; `sender<T>`</td>
+    <td>Get the sender. If the channel is closed, throw `ratatoskr::concurrent::channel_alredy_closed`.</td>
+  </tr>
+  <tr>
+    <td rowspan="2">push</td>
+    <td>`(const T &x)` -&gt; `void`</td>
+    <td rowspan="2">Send a value to the channel.</td>
+  </tr>
+  <tr>
+   <td>`(T &&x)` -&gt; `void`</td>
+  </tr>
+  <tr>
+   <td>close</td>
+   <td>`void` -&gt; `void`</td>
+   <td>Close the channel.</td>
+  </tr>
+</table>
 
-## `ratatoskr::concurrent::make_channel<T>() -> std::pair<sender<T>, receiver<T>>`
-* A helper function that creates pair of sender and receiver.
+<table>
+  <tr>
+    <th>class</th>
+    <th>method</th>
+    <th>signature</th>
+    <th>description</th>
+  </tr>
+  <tr>
+    <td rowspan="3">`sender<T>`</td>
+    <td rowspan="2">push</td>
+    <td>`(const T &x)` -&gt; `void`</td>
+    <td rowspan="2">Send a value to the channel.</td>
+  </tr>
+  <tr>
+   <td>`(T &&x)` -&gt; `void`</td>
+  </tr>
+  <tr>
+   <td>close</td>
+   <td>`()` -&gt; `void`</td>
+   <td>Close the channel.</td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <th>class</th>
+    <th>method</th>
+    <th>signature</th>
+    <th>description</th>
+  </tr>
+  <tr>
+    <td rowspan="2">`reciever<T>`</td>
+    <td>next</td>
+    <td>`()` -&gt; `T`</td>
+    <td>Take the value sent to the channel one by one as same order as it was sent.If the channel is empty, block the thread until new value is sent.When the channel is closed, throw `ratatoskr::concurrent::close_channel`.</td>
+  </tr>
+  <tr>
+   <td>share</td>
+   <td>`()` -&gt; `shared_receiver<T>`</td>
+   <td>Return shared_receier and invalidate this receier.</td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <th>function</th>
+    <th>signature</th>
+    <th>description</th>
+  </tr>
+  <tr>
+    <td rowspan="2">`make_channel<T>`</td>
+    <td>`()` -&gt; `std::pair<sender<T>, receiver<T>>`</td>
+    <td>Create a pair of `sender<T>` and `receiver<T>`.</td>
+  </tr>
+  <tr>
+    <td>`(with_shared_receiver_t)` -&gt; `std::pair<sender<T>, shared_receiver<T>>`</td>
+    <td>When passed `with_shared_receiver`, share the receiver.</td>
+  </tr>
+<table>
 
 example:
 
-```cpp
+```c++
 using namespace ratatoskr::concurrent;
 using namespace std::chrono_literals;
 
