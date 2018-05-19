@@ -86,7 +86,7 @@ f(12); // Print "12", then return std::optional{6}.
   </tr>
   <tr>
    <td>close</td>
-   <td><code>void</code> -&gt; <code>void</code></td>
+   <td><code>()</code> -&gt; <code>void</code></td>
    <td>Close the channel.</td>
   </tr>
 </table>
