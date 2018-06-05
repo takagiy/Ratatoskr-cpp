@@ -5,7 +5,7 @@
 #include <thread>
 
 int main() {
-  using namespace ratatoskr::concurrent;
+  using namespace rat::concurrent;
   using namespace std::chrono_literals;
 
   auto log = [](auto tag, auto x) {

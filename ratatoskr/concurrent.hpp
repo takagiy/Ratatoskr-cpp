@@ -8,7 +8,9 @@
 #ifndef RATATOSKR_CONCURRENT_HPP
 #define RATATOSKR_CONCURRENT_HPP
 
-namespace ratatoskr::concurrent {
+namespace rat {
+inline namespace concurrent {
+
 template <class T>
 struct channel_state;
 
@@ -147,11 +149,12 @@ public:
 template <class T>
 class receiver {
   std::shared_ptr<channel_state<T>> state;
-  std::optional<typename std::forward_list<std::optional<T>>::iterator>
-      iterator;
+  typename std::forward_list<std::optional<T>>::iterator iterator;
 
 public:
-  receiver(const std::shared_ptr<channel_state<T>> &state) : state(state) {
+  receiver(const std::shared_ptr<channel_state<T>> &state)
+      : state(state),
+        iterator((std::lock_guard{state->data_mutex}, state->last)) {
     std::lock_guard lock{state->data_mutex};
     if (state->has_receiver_v) {
       throw receiver_already_retrived{"receiver::receiver"};
@@ -160,7 +163,6 @@ public:
       throw channel_already_closed{"receiver::receiver"};
     }
     else {
-      iterator = state->last;
       state->has_receiver_v = true;
     }
   }
@@ -175,7 +177,7 @@ public:
   T next() {
     std::unique_lock lock{state->data_mutex};
     state->notifier.wait(lock, [this] {
-      auto next = *iterator;
+      auto next = iterator;
       return ++next != state->data.end() || state->is_closed_v;
     });
 
@@ -183,9 +185,14 @@ public:
       throw close_channel{};
     }
 
-    ++*iterator;
+    ++iterator;
     state->data.pop_front();
-    return ***iterator;
+    return **iterator;
+  }
+
+  std::optional<T> operator*() {
+    std::lock_guard lock{state->data_mutex};
+    return *iterator;
   }
 
   shared_receiver<T> share() { return shared_receiver<T>{std::move(*this)}; }
@@ -200,6 +207,7 @@ public:
       : receiver_(std::make_shared<receiver<T>>(std::move(receiver_))) {}
 
   T next() { return receiver_->next(); }
+  auto operator*() { return receiver_->operator*(); }
 };
 
 template <class T>
@@ -214,6 +222,6 @@ auto make_channel(with_shared_receiver_t) {
   return std::pair{ch.get_sender(), ch.get_receiver().share()};
 }
 
-} // namespace ratatoskr::concurrent
-
+} // namespace concurrent
+} // namespace rat
 #endif

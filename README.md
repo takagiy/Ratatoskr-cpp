@@ -15,23 +15,24 @@ A class template that provides map or filter function composition.
   </tr>
   <tr>
     <td>map</td>
-    <td><code>(G g)</code> -&gt; <code>thunk&lt;H&gt;</code></td>
+    <td><code>(G &/&&g)</code> -&gt; <code>thunk&lt;H&gt;</code></td>
     <td>Return a new thunk compounded a map functor g.</td>
   </tr>
   <tr>
     <td>filter</td>
-    <td><code>(G g)</code> -&gt; <code>thunk&lt;H&gt;</code></td>
+    <td><code>(G &/&&g)</code> -&gt; <code>thunk&lt;H&gt;</code></td>
     <td>Return a new thunk compounded a filter functor g.</td>
   </tr>
   <tr>
-    <td rowspan="2">operator()</td>
-    <td><code>(const T &x)</code> -&gt; <code>std::optional&lt;R&gt;</code></td>
-    <td rowspan="2">Invoke the composed function passing an argument x then return the result wrapped in <code>std::optional</code>.</td>
+    <td>operator()</td>
+    <td><code>(T &/&&x)</code> -&gt; <code>std::optional&lt;R&gt;</code></td>
+    <td>Invoke the composed function passing an argument x then return the result wrapped in <code>std::optional</code>.</td>
   </tr>
   <tr>
-    <td><code>(T &&x)</code> -&gt; <code>std::optional&lt;R&gt;</code></td>
   </tr>
 </table>
+
+Note: In this page, universal references are referred like as `T &/&&`. 
 
 example: 
 
@@ -144,7 +145,7 @@ The receiver is non-copyable but moveable.
 
 ### class template `shared_receiver<T>`
 
-The shared_receiver is a copyable receiver.Even if there are multiple shared_receiver, a sent value will received only one time on only one shared_receiver.It is useful for processing sent value on multiple threads.
+The shared_receiver is a copyable receiver.Even if there are multiple shared_receiver, one sent value will received only one time on only one shared_receiver.It is useful for processing sent value on multiple threads.
 
 <table>
   <tr>

@@ -14,7 +14,8 @@
     return this->compose(functional::filtering{std::forward<G_>(g_)});         \
   }
 
-namespace ratatoskr::functional {
+namespace rat {
+inline namespace functional {
 
 template <class F, class G = void>
 class mapping;
@@ -161,6 +162,8 @@ public:
 };
 
 thunk()->thunk<void>;
-} // namespace ratatoskr::functional
+
+} // namespace functional
+} // namespace rat
 #undef RATATOSKR_COMPOSITION_IMPL
 #endif
