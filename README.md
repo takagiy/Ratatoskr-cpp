@@ -1,7 +1,7 @@
 ![Ratatoskr](https://raw.githubusercontent.com/GobanTKG/Ratatoskr-cpp/medias/medias/Ratatoskr_logo.png)
 A compact Functional/Reactive/Concurrent utility library on C++17.
 
-## namespace `ratatoskr::functional`
+## inline namespace `rat::functional`
 
 ### class template `thunk<F>`
 
@@ -37,12 +37,10 @@ Note: In this page, universal references are referred like as `T &/&&`.
 example: 
 
 ```C++
-using namespace::ratatoskr::functional;
-
 auto even = [](auto n) { return n % 2 == 0; };
 
 
-auto f = thunk{}
+auto f = rat::thunk{}
            .filter(even)
            .map([](auto n) {
               cout << n << endl;
@@ -57,7 +55,7 @@ f(12); // Print "12", then return std::optional{6}.
 ```
 
 
-## namespace `ratatoskr::concurrent`
+## inline namespace `rat::concurrent`
 
 ### class template `channel<T>`
 
@@ -73,12 +71,12 @@ A channel can have multiple senders and only one receiver.
   <tr>
     <td>get_receiver</td>
     <td><code>()</code> -&gt; <code>receiver&lt;T&gt;</code></td>
-    <td>Get the receiver. If the receiver is already got, throw <code>ratatoskr::concurrent::receiver_already_retrieved</code>.If the channel is closed, throw <code>ratatoskr::concurrent::channel_already_closed</code>.</td>
+    <td>Get the receiver. If the receiver is already got, throw <code>rat::concurrent::receiver_already_retrieved</code>.If the channel is closed, throw <code>rat::concurrent::channel_already_closed</code>.</td>
   </tr>
   <tr>
     <td>get_sender</td>
     <td><code>()</code> -&gt; <code>sender&lt;T&gt;</code></td>
-    <td>Get the sender. If the channel is closed, throw <code>ratatoskr::concurrent::channel_already_closed</code>.</td>
+    <td>Get the sender. If the channel is closed, throw <code>rat::concurrent::channel_already_closed</code>.</td>
   </tr>
   <tr>
     <td rowspan="2">push</td>
@@ -134,7 +132,7 @@ The receiver is non-copyable but moveable.
   <tr>
     <td>next</td>
     <td><code>()</code> -&gt; <code>T</code></td>
-    <td>Take the value sent to the channel one by one as same order as it was sent.If the channel is empty, block the thread until new value is sent.When the channel is closed, throw <code>ratatoskr::concurrent::close_channel</code>.</td>
+    <td>Take the value sent to the channel one by one as same order as it was sent.If the channel is empty, block the thread until new value is sent.When the channel is closed, throw <code>rat::concurrent::close_channel</code>.</td>
   </tr>
   <tr>
    <td>share</td>
@@ -156,7 +154,7 @@ The shared_receiver is a copyable receiver.Even if there are multiple shared_rec
   <tr>
     <td>next</td>
     <td><code>()</code> -&gt; <code>T</code></td>
-    <td>Take the value sent to the channel one by one as same order as it was sent.If the channel is empty, block the thread until new value is sent.When the channel is closed, throw <code>ratatoskr::concurrent::close_channel</code>.</td>
+    <td>Take the value sent to the channel one by one as same order as it was sent.If the channel is empty, block the thread until new value is sent.When the channel is closed, throw <code>rat::concurrent::close_channel</code>.</td>
   </tr>
 </table>
 
@@ -182,10 +180,9 @@ The shared_receiver is a copyable receiver.Even if there are multiple shared_rec
 example:
 
 ```C++
-using namespace ratatoskr::concurrent;
 using namespace std::chrono_literals;
 
-auto [sn, rc] = make_channel<int>();
+auto [sn, rc] = rat::make_channel<int>();
 
 auto produce = [](auto sn) {
   for (int i = 0; i < 10; ++i) {
