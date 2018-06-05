@@ -3,19 +3,15 @@
 
 #ifndef RATATOSKR_FUNCTIONAL_HPP
 #define RATATOSKR_FUNCTIONAL_HPP
-#define RATATOSKR_COMPOSITION_IMPL                                             \
-  template <class G_>                                                          \
-  constexpr auto map(G_ &&g_) {                                                \
-    return this->compose(functional::mapping{std::forward<G_>(g_)});           \
-  }                                                                            \
-                                                                               \
-  template <class G_>                                                          \
-  constexpr auto filter(G_ &&g_) {                                             \
-    return this->compose(functional::filtering{std::forward<G_>(g_)});         \
-  }
 
 namespace rat {
 inline namespace functional {
+
+template <class T>
+class map_and_filterable;
+
+template <class T>
+class composable;
 
 template <class F, class G = void>
 class mapping;
@@ -26,104 +22,113 @@ class filtering;
 template <class F = void>
 class thunk;
 
-template <class F, class G>
-class mapping {
+template <class T>
+class map_and_filterable {
+public:
+  template <class F>
+  constexpr auto map(F &&f) const {
+    return static_cast<const T *>(this)->compose(mapping{std::forward<F>(f)});
+  };
+
+  template <class F>
+  constexpr auto filter(F &&f) const {
+    return static_cast<const T *>(this)->compose(filtering{std::forward<F>(f)});
+  }
+};
+
+template <template <class, class> class Composable, class F, class G>
+class composable<Composable<F, G>>
+    : public map_and_filterable<composable<Composable<F, G>>> {
+protected:
   F f;
   G g;
 
 public:
-  constexpr mapping(const F &f_, const G &g_) : f(f_), g(g_) {}
-  constexpr mapping(const F &f_, G &&g_) : f(f_), g(std::move(g_)) {}
-  constexpr mapping(F &&f_, G &&g_) : f(std::move(f_)), g(std::move(g_)) {}
-  constexpr mapping(F &&f_, const G &g_) : f(std::move(f_)), g(g_) {}
-
-  template <class T>
-  constexpr decltype(auto) operator()(T &&x) {
-    return g(f(std::forward<T>(x)));
-  }
+  constexpr composable(const F &f_, const G &g_) : f(f_), g(g_) {}
+  constexpr composable(const F &f_, G &&g_) : f(f_), g(std::move(g_)) {}
+  constexpr composable(F &&f_, G &&g_) : f(std::move(f_)), g(std::move(g_)) {}
+  constexpr composable(F &&f_, const G &g_) : f(std::move(f_)), g(g_) {}
 
   template <class H>
-  constexpr auto compose(H &&h) {
-    return functional::mapping{f, g.compose(std::forward<H>(h))};
+  constexpr auto compose(H &&h) const {
+    return Composable{f, g.compose(std::forward<H>(h))};
   }
-
-  RATATOSKR_COMPOSITION_IMPL
 };
 
-template <class F>
-class mapping<F, void> {
+template <template <class, class> class Composable, class F>
+class composable<Composable<F, void>>
+    : public map_and_filterable<composable<Composable<F, void>>> {
+protected:
   F f;
 
 public:
-  constexpr mapping(const F &f_) : f(f_) {}
-  constexpr mapping(F &&f_) : f(std::move(f_)) {}
+  constexpr composable(const F &f_) : f(f_) {}
+  constexpr composable(F &&f_) : f(std::move(f_)) {}
+
+  template <class G>
+  constexpr auto compose(G &&g) const {
+    return Composable{f, std::forward<G>(g)};
+  }
+};
+
+template <class F, class G>
+class mapping : public composable<mapping<F, G>> {
+public:
+  using composable<mapping<F, G>>::composable;
+
+  template <class T>
+  constexpr decltype(auto) operator()(T &&x) {
+    return this->g(this->f(std::forward<T>(x)));
+  }
+};
+
+template <class F>
+class mapping<F, void> : public composable<mapping<F, void>> {
+public:
+  using composable<mapping<F, void>>::composable;
 
   template <class T>
   constexpr auto operator()(T &&x) {
-    return std::optional{f(std::forward<T>(x))};
+    return std::optional{this->f(std::forward<T>(x))};
   }
-
-  template <class G>
-  constexpr auto compose(G &&g) {
-    return functional::mapping{f, std::forward<G>(g)};
-  }
-
-  RATATOSKR_COMPOSITION_IMPL
 };
+
+template <class F, class G>
+mapping(F, G)->mapping<F, G>;
 
 template <class F>
 mapping(F)->mapping<F, void>;
 
 template <class F, class G>
-class filtering {
-  F f;
-  G g;
-
+class filtering : public composable<filtering<F, G>> {
 public:
-  constexpr filtering(const F &f_, const G &g_) : f(f_), g(g_) {}
-  constexpr filtering(const F &f_, G &&g_) : f(f_), g(std::move(g_)) {}
-  constexpr filtering(F &&f_, G &&g_) : f(std::move(f_)), g(std::move(g_)) {}
-  constexpr filtering(F &&f_, const G &g_) : f(std::move(f_)), g(g_) {}
+  using composable<filtering<F, G>>::composable;
 
   template <class T>
   constexpr decltype(auto) operator()(T &&x) {
-    return f(x) ? g(std::forward<T>(x)) : std::nullopt;
+    return this->f(x) ? this->g(std::forward<T>(x)) : std::nullopt;
   }
-
-  template <class H>
-  constexpr auto compose(H &&h) {
-    return functional::filtering{f, g.compose(std::forward<H>(h))};
-  }
-
-  RATATOSKR_COMPOSITION_IMPL
 };
 
 template <class F>
-class filtering<F, void> {
-  F f;
-
+class filtering<F, void> : public composable<filtering<F, void>> {
 public:
-  constexpr filtering(const F &f_) : f(f_) {}
-  constexpr filtering(F &&f_) : f(std::move(f_)) {}
+  using composable<filtering<F, void>>::composable;
 
   template <class T>
   constexpr auto operator()(T &&x) {
-    return f(x) ? std::optional{std::forward<T>(x)} : std::nullopt;
+    return this->f(x) ? std::optional{std::forward<T>(x)} : std::nullopt;
   }
-
-  template <class G>
-  constexpr auto compose(G &&g) {
-    return functional::filtering{f, std::forward<G>(g)};
-  }
-
-  RATATOSKR_COMPOSITION_IMPL
 };
+
+template <class F, class G>
+filtering(F, G)->filtering<F, G>;
 
 template <class F>
 filtering(F)->filtering<F, void>;
 
 template <class F>
-class thunk {
+class thunk : public map_and_filterable<thunk<F>> {
   F f;
 
 public:
@@ -136,15 +141,13 @@ public:
   }
 
   template <class G>
-  constexpr auto compose(G &&g) {
+  constexpr auto compose(G &&g) const {
     return functional::thunk{f.compose(std::forward<G>(g))};
   }
-
-  RATATOSKR_COMPOSITION_IMPL
 };
 
 template <>
-class thunk<void> {
+class thunk<void> : public map_and_filterable<thunk<void>> {
 public:
   constexpr thunk() {}
 
@@ -154,16 +157,13 @@ public:
   }
 
   template <class F>
-  constexpr auto compose(F &&f) {
+  constexpr auto compose(F &&f) const {
     return functional::thunk{std::forward<F>(f)};
   }
-
-  RATATOSKR_COMPOSITION_IMPL
 };
 
 thunk()->thunk<void>;
 
 } // namespace functional
 } // namespace rat
-#undef RATATOSKR_COMPOSITION_IMPL
 #endif
