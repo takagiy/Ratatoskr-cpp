@@ -26,6 +26,8 @@ class receiver;
 template <class T>
 class shared_receiver;
 
+class channel_closer;
+
 class close_channel : public std::exception {
   const char *what() const noexcept { return "close_channel"; }
 };
@@ -58,6 +60,29 @@ struct channel_state {
       : is_closed_v(false), data{std::nullopt}, last(data.begin()) {}
 };
 
+class channel_closer {
+  template <class T>
+  friend class channel;
+
+  template <class T>
+  channel_closer(const std::shared_ptr<channel_state<T>> &state)
+      : reference_counter(state), is_closed_v(state->is_closed_v),
+        data_mutex(state->data_mutex), notifier(state->notifier) {}
+  std::shared_ptr<void> reference_counter;
+  bool &is_closed_v;
+  std::mutex &data_mutex;
+  std::condition_variable &notifier;
+
+public:
+  void close() {
+    {
+      std::lock_guard lock{data_mutex};
+      is_closed_v = true;
+    }
+    notifier.notify_all();
+  }
+};
+
 template <class T>
 class channel {
   std::shared_ptr<channel_state<T>> state;
@@ -67,6 +92,7 @@ public:
 
   sender<T> get_sender() { return sender<T>{state}; }
   receiver<T> get_receiver() { return receiver<T>{state}; }
+  channel_closer get_closer() { return channel_closer{state}; }
 
   void push(const T &x) {
     {
@@ -103,15 +129,20 @@ public:
 
 template <class T>
 class sender {
+  template <class T_>
+  friend class channel;
+
   std::shared_ptr<channel_state<T>> state;
 
-public:
   sender(const std::shared_ptr<channel_state<T>> &state) : state(state) {
     std::lock_guard lock{state->data_mutex};
     if (state->is_closed_v) {
       throw channel_already_closed{"sender::sender"};
     }
   }
+
+public:
+  sender() {}
 
   bool avail() const { return state.use_count() != 0; }
 
@@ -166,6 +197,8 @@ public:
       state->has_receiver_v = true;
     }
   }
+
+  receiver() {}
 
   receiver(const receiver &) = delete;
   receiver &operator=(const receiver &) = delete;
