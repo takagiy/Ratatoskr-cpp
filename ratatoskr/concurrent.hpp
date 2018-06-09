@@ -28,6 +28,8 @@ class shared_receiver;
 
 class channel_closer;
 
+class scheduler;
+
 class close_channel : public std::exception {
   const char *what() const noexcept { return "close_channel"; }
 };
@@ -241,6 +243,52 @@ public:
 
   T next() { return receiver_->next(); }
   auto operator*() { return receiver_->operator*(); }
+};
+
+class scheduler {
+  std::forward_list<rat::channel_closer> closers;
+  std::forward_list<std::thread> threads;
+  bool is_closed_v;
+  std::mutex m;
+
+public:
+  scheduler() : is_closed_v(false) {}
+
+  void halt() {
+    {
+      std::lock_guard lock{m};
+      is_closed_v = true;
+    }
+    for (auto &&c : closers) {
+      c.close();
+    }
+    for (auto &&th : threads) {
+      th.join();
+    }
+  }
+
+  void add(std::thread &&th, rat::channel_closer &closer) {
+    {
+      std::lock_guard lock{m};
+      if (is_closed_v) {
+        closer.close();
+        return;
+      }
+    }
+    threads.emplace_front(std::move(th));
+    closers.push_front(closer);
+  }
+  void add(std::thread &&th, rat::channel_closer &&closer) {
+    {
+      std::lock_guard lock{m};
+      if (is_closed_v) {
+        closer.close();
+        return;
+      }
+    }
+    threads.emplace_front(std::move(th));
+    closers.push_front(closer);
+  }
 };
 
 template <class T>
