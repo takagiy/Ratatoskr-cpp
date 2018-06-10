@@ -3,6 +3,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <thread>
 #include <utility>
 
 #ifndef RATATOSKR_CONCURRENT_HPP
@@ -76,7 +77,7 @@ class channel_closer {
   std::condition_variable &notifier;
 
 public:
-  void close() {
+  void close() const {
     {
       std::lock_guard lock{data_mutex};
       is_closed_v = true;
@@ -92,9 +93,9 @@ class channel {
 public:
   channel() : state(std::make_shared<channel_state<T>>()) {}
 
-  sender<T> get_sender() { return sender<T>{state}; }
-  receiver<T> get_receiver() { return receiver<T>{state}; }
-  channel_closer get_closer() { return channel_closer{state}; }
+  sender<T> get_sender() const { return sender<T>{state}; }
+  receiver<T> get_receiver() const { return receiver<T>{state}; }
+  channel_closer get_closer() const { return channel_closer{state}; }
 
   void push(const T &x) {
     {
@@ -249,45 +250,44 @@ class scheduler {
   std::forward_list<rat::channel_closer> closers;
   std::forward_list<std::thread> threads;
   bool is_closed_v;
-  std::mutex m;
+  mutable std::mutex m;
 
 public:
   scheduler() : is_closed_v(false) {}
 
   void halt() {
-    {
-      std::lock_guard lock{m};
-      is_closed_v = true;
-    }
+    std::lock_guard lock{m};
+    is_closed_v = true;
     for (auto &&c : closers) {
       c.close();
     }
-    for (auto &&th : threads) {
-      th.join();
-    }
   }
 
-  void add(std::thread &&th, rat::channel_closer &closer) {
-    {
-      std::lock_guard lock{m};
-      if (is_closed_v) {
-        closer.close();
-        return;
-      }
+  void add(std::thread &&th, const rat::channel_closer &closer) {
+    std::lock_guard lock{m};
+    if (is_closed_v) {
+      closer.close();
+      th.join();
+      return;
     }
     threads.emplace_front(std::move(th));
     closers.push_front(closer);
   }
   void add(std::thread &&th, rat::channel_closer &&closer) {
-    {
-      std::lock_guard lock{m};
-      if (is_closed_v) {
-        closer.close();
-        return;
-      }
+    std::lock_guard lock{m};
+    if (is_closed_v) {
+      closer.close();
+      th.join();
+      return;
     }
     threads.emplace_front(std::move(th));
-    closers.push_front(closer);
+    closers.push_front(std::move(closer));
+  }
+
+  void wait() {
+    for (auto &&th : threads) {
+      th.join();
+    }
   }
 };
 
