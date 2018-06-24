@@ -251,19 +251,23 @@ class scheduler {
   std::forward_list<std::thread> threads;
   bool is_closed_v;
   mutable std::mutex m;
+  mutable std::condition_variable cv;
 
 public:
   scheduler() : is_closed_v(false) {}
 
   void halt() {
-    std::lock_guard lock{m};
-    is_closed_v = true;
-    for (auto &&c : closers) {
-      c.close();
+    {
+      std::lock_guard lock{m};
+      is_closed_v = true;
+      for (auto &&c : closers) {
+        c.close();
+      }
     }
+    cv.notify_all();
   }
 
-  void add(std::thread &&th, const rat::channel_closer &closer) {
+  void connect(std::thread &&th, const rat::channel_closer &closer) {
     std::lock_guard lock{m};
     if (is_closed_v) {
       closer.close();
@@ -273,7 +277,7 @@ public:
     threads.emplace_front(std::move(th));
     closers.push_front(closer);
   }
-  void add(std::thread &&th, rat::channel_closer &&closer) {
+  void connect(std::thread &&th, rat::channel_closer &&closer) {
     std::lock_guard lock{m};
     if (is_closed_v) {
       closer.close();
@@ -284,7 +288,36 @@ public:
     closers.push_front(std::move(closer));
   }
 
+  void connect(std::forward_list<std::thread> &ths,
+               const rat::channel_closer &closer) {
+    std::lock_guard lock{m};
+    if (is_closed_v) {
+      closer.close();
+      for (auto &&th : ths) {
+        th.join();
+      }
+      return;
+    }
+    threads.splice_after(threads.before_begin(), ths);
+    closers.push_front(closer);
+  }
+  void connect(std::forward_list<std::thread> &&ths,
+               const rat::channel_closer &closer) {
+    std::lock_guard lock{m};
+    if (is_closed_v) {
+      closer.close();
+      for (auto &&th : ths) {
+        th.join();
+      }
+      return;
+    }
+    threads.splice_after(threads.before_begin(), ths);
+    closers.push_front(closer);
+  }
+
   void wait() {
+    std::unique_lock lock{m};
+    cv.wait(lock, [this] { return is_closed_v; });
     for (auto &&th : threads) {
       th.join();
     }
