@@ -1,3 +1,4 @@
+#include <functional>
 #include <optional>
 #include <utility>
 
@@ -43,7 +44,7 @@ inline namespace functional {
       constexpr auto then(F &&f) const {
         return static_cast<const T *>(this)->compose(
             mapping{[f = std::forward<F>(f)](auto &&x) {
-              f(x);
+              std::invoke(f, x);
               return x;
             }});
       }
@@ -101,7 +102,7 @@ inline namespace functional {
 
       template <class T>
       constexpr decltype(auto) operator()(T &&x) {
-        return this->g(this->f(std::forward<T>(x)));
+        return std::invoke(this->g, std::invoke(this->f, std::forward<T>(x)));
       }
     };
 
@@ -113,7 +114,7 @@ inline namespace functional {
 
       template <class T>
       constexpr auto operator()(T &&x) {
-        return std::optional{this->f(std::forward<T>(x))};
+        return std::optional{std::invoke(this->f, std::forward<T>(x))};
       }
     };
 
@@ -130,7 +131,9 @@ inline namespace functional {
 
       template <class T>
       constexpr decltype(auto) operator()(T &&x) {
-        return this->f(x) ? this->g(std::forward<T>(x)) : std::nullopt;
+        return std::invoke(this->f, x)
+                   ? std::invoke(this->g, std::forward<T>(x))
+                   : std::nullopt;
       }
     };
 
@@ -143,7 +146,8 @@ inline namespace functional {
 
       template <class T>
       constexpr auto operator()(T &&x) {
-        return this->f(x) ? std::optional{std::forward<T>(x)} : std::nullopt;
+        return std::invoke(this->f, x) ? std::optional{std::forward<T>(x)}
+                                       : std::nullopt;
       }
     };
 
@@ -161,8 +165,8 @@ inline namespace functional {
 
       template <class T>
       constexpr decltype(auto) operator()(T &&x) {
-        std::optional result = this->f(std::forward<T>(x));
-        return result ? this->g(*result) : std::nullopt;
+        std::optional result = std::invoke(this->f, std::forward<T>(x));
+        return result ? std::invoke(this->g, *result) : std::nullopt;
       }
     };
 
@@ -175,7 +179,7 @@ inline namespace functional {
 
       template <class T>
       constexpr auto operator()(T &&x) {
-        return this->f(std::forward<T>(x));
+        return std::invoke(this->f, std::forward<T>(x));
       }
     };
 
@@ -199,7 +203,7 @@ inline namespace functional {
 
     template <class T>
     constexpr auto operator()(T &&x) {
-      return f(std::forward<T>(x));
+      return std::invoke(f, std::forward<T>(x));
     }
 
     template <class G>
@@ -215,7 +219,7 @@ inline namespace functional {
 
     template <class T>
     constexpr auto operator()(T &&x) {
-      return f(std::forward<T>(x));
+      return std::optional{std::forward<T>(x)};
     }
 
     template <class F>
