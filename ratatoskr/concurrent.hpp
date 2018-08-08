@@ -128,7 +128,7 @@ inline namespace concurrent {
       state->notifier.notify_all();
     }
 
-    void is_closed() const {
+    bool is_closed() const {
       std::lock_guard{state->data_mutex};
       return state->is_closed_v;
     }
@@ -183,7 +183,7 @@ inline namespace concurrent {
       }
       state->notifier.notify_all();
     }
-    void is_closed() const {
+    bool is_closed() const {
       std::lock_guard{state->data_mutex};
       return state->is_closed_v;
     }
@@ -242,7 +242,7 @@ inline namespace concurrent {
 
     shared_receiver<T> share() { return shared_receiver<T>{std::move(*this)}; }
 
-    void is_closed() const {
+    bool is_closed() const {
       std::lock_guard{state->data_mutex};
       return state->is_closed_v;
     }
@@ -259,7 +259,7 @@ inline namespace concurrent {
     T next() { return receiver_->next(); }
     auto operator*() { return receiver_->operator*(); }
 
-    void is_closed() const { return receiver_->is_closed_v; }
+    bool is_closed() const { return receiver_->is_closed_v; }
   };
 
   class scheduler {
