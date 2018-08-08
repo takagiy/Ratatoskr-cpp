@@ -128,7 +128,10 @@ inline namespace concurrent {
       state->notifier.notify_all();
     }
 
-    [[deprecated("It's only for a test.")]] auto get_state() { return state; }
+    void is_closed() const {
+      std::lock_guard{state->data_mutex};
+      return state->is_closed_v;
+    }
   };
 
   template <class T>
@@ -179,6 +182,10 @@ inline namespace concurrent {
         state->is_closed_v = true;
       }
       state->notifier.notify_all();
+    }
+    void is_closed() const {
+      std::lock_guard{state->data_mutex};
+      return state->is_closed_v;
     }
   };
 
@@ -234,6 +241,11 @@ inline namespace concurrent {
     }
 
     shared_receiver<T> share() { return shared_receiver<T>{std::move(*this)}; }
+
+    void is_closed() const {
+      std::lock_guard{state->data_mutex};
+      return state->is_closed_v;
+    }
   };
 
   template <class T>
@@ -246,6 +258,8 @@ inline namespace concurrent {
 
     T next() { return receiver_->next(); }
     auto operator*() { return receiver_->operator*(); }
+
+    void is_closed() const { return receiver_->is_closed_v; }
   };
 
   class scheduler {
