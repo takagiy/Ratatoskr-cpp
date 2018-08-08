@@ -8,31 +8,31 @@ int main() {
   using std::this_thread::sleep_for;
 
   auto log = [](auto tag, auto data) {
-    static std::mutex m{};
+    static std::mutex m;
     std::lock_guard lock{m};
     std::cout << tag << ": " << data << " @" << std::this_thread::get_id()
               << std::endl;
   };
 
   rat::scheduler sch;
-  rat::source<int> src1;
-  rat::source<int> src2;
+  rat::source<int> odd;
+  rat::source<int> even;
 
-  src1.filter([](int n) { return n % 2 == 0; })
-      .then([&log](int n) { log("rc even", n); })
-      .finally([&log] { log("rc", "end"); })
+  odd.filter([](int n) { return n % 2 == 1; })
+      .then([&log](int n) { log("odd ", n); })
+      .finally([&log] { log("odd ", "end"); })
       .run_on(sch, 4);
 
-  src2.filter([](int n) { return n % 2 == 1; })
-      .then([&log](int n) { log("rc odd ", n); })
-      .finally([&log] { log("rc", "end"); })
+  even.filter([](int n) { return n % 2 == 0; })
+      .then([&log](int n) { log("even", n); })
+      .finally([&log] { log("even", "end"); })
       .run_on(sch, 4);
 
   sleep_for(1s);
 
   for (std::size_t i = 0; i < 100; ++i) {
-    src1.push(i);
-    src2.push(i);
+    odd.push(i);
+    even.push(i);
   }
 
   sleep_for(1s);
