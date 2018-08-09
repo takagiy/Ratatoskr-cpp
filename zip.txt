@@ -1,0 +1,11 @@
+next = rc.next();
+lock {
+  thunk(t[1], ..., next, ..., t[n]);
+  t[m] = next;
+}
+
+a, b
+x, y
+
+(a, x) (a, y) (b, y)
+(a, x) (b, x) (b, y)

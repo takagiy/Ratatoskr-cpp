@@ -105,9 +105,8 @@ inline namespace reactive {
   public:
     void run() {
       if (!ch.is_closed()) {
-        static auto shared_rc = ch.get_receiver().share();
+        static auto rc = ch.get_receiver();
 
-        auto rc = shared_rc;
         try {
           while (true) {
             thunk(rc.next());
@@ -119,6 +118,24 @@ inline namespace reactive {
       }
       else {
         finalize();
+      }
+    }
+
+    auto next() -> std::optional<decltype(thunk(std::declval<T>()))> {
+      if (!ch.is_closed()) {
+        static auto rc = ch.get_receiver();
+
+        try {
+          return std::optional{thunk(rc.next())};
+        }
+        catch (const rat::close_channel &) {
+          finalize();
+          return std::nullopt;
+        }
+      }
+      else {
+        finalize();
+        return std::nullopt;
       }
     }
 
