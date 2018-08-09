@@ -31,6 +31,22 @@ inline namespace reactive {
 
     auto get_sender() { return ch.get_sender(); }
 
+    auto next() -> std::optional<T> {
+      if (!ch.is_closed()) {
+        static auto rc = ch.get_receiver();
+
+        try {
+          return std::optional{rc.next()};
+        }
+        catch (const rat::close_channel &) {
+          return std::nullopt;
+        }
+      }
+      else {
+        return std::nullopt;
+      }
+    }
+
     template <class F>
     [[nodiscard]] auto map(F &&f) {
       return rat::signal{ch, rat::thunk{}.map(std::forward<F>(f)),
