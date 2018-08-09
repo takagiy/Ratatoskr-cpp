@@ -80,8 +80,15 @@ inline namespace reactive {
     std::shared_ptr<std::atomic_bool> is_finalized_p;
 
     template <size_t... I>
-    void finalize(std::index_sequence<I...>) {
+    void call_finalizer(std::index_sequence<I...>) {
       (std::get<I>(finalizer)(), ...);
+    }
+
+    void finalize() {
+      if (*is_finalized_p)
+        return;
+      *is_finalized_p = true;
+      call_finalizer(std::make_index_sequence<sizeof...(Finally)>{});
     }
 
     template <class Channel, class Thunk, class Tuple,
@@ -107,17 +114,11 @@ inline namespace reactive {
           }
         }
         catch (const rat::close_channel &) {
-          if (*is_finalized_p)
-            return;
-          *is_finalized_p = true;
-          finalize(std::make_index_sequence<sizeof...(Finally)>{});
+          finalize();
         }
       }
       else {
-        if (*is_finalized_p)
-          return;
-        *is_finalized_p = true;
-        finalize(std::make_index_sequence<sizeof...(Finally)>{});
+        finalize();
       }
     }
 
