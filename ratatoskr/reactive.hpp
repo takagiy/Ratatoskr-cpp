@@ -103,6 +103,8 @@ inline namespace reactive {
           is_finalized_p(std::make_shared<std::atomic_bool>(false)) {}
 
   public:
+    using result_type = decltype(thunk(std::declval<T>()));
+
     void run() {
       if (!ch.is_closed()) {
         static auto rc = ch.get_receiver();
@@ -121,7 +123,7 @@ inline namespace reactive {
       }
     }
 
-    auto next() -> std::optional<decltype(thunk(std::declval<T>()))> {
+    auto next() -> std::optional<result_type> {
       if (!ch.is_closed()) {
         static auto rc = ch.get_receiver();
 
