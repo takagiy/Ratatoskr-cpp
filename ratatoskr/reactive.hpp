@@ -49,31 +49,27 @@ inline namespace reactive {
 
     template <class F>
     [[nodiscard]] auto map(F &&f) {
-      return rat::signal{ch, rat::thunk{}.map(std::forward<F>(f)),
-                         std::tuple<>{}};
+      return this->signal().map(std::forward<F>(f));
     }
 
     template <class F>
     [[nodiscard]] auto try_map(F &&f) {
-      return rat::signal{ch, rat::thunk{}.try_map(std::forward<F>(f)),
-                         std::tuple<>{}};
+      return this->signal().try_map(std::forward<F>(f));
     }
 
     template <class F>
     [[nodiscard]] auto then(F &&f) {
-      return rat::signal{ch, rat::thunk{}.then(std::forward<F>(f)),
-                         std::tuple<>{}};
+      return this->signal().then(std::forward<F>(f));
     }
 
     template <class F>
     [[nodiscard]] auto filter(F &&f) {
-      return rat::signal{ch, rat::thunk{}.filter(std::forward<F>(f)),
-                         std::tuple<>{}};
+      return this->signal().filter(std::forward<F>(f));
     }
 
     template <class F>
     [[nodiscard]] auto finally(F &&f) {
-      return rat::signal{ch, rat::thunk{}, std::tuple{std::forward<F>(f)}};
+      return this->signal.finally(std::forward<F>(f));
     }
 
     void push(const T &x) { ch.push(x); }
