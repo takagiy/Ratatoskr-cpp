@@ -46,7 +46,7 @@ inline namespace concurrent {
   class scheduler;
 
   class close_channel : public std::exception {
-    const char *what() const noexcept { return "close_channel"; }
+    auto what() const noexcept -> const char * { return "close_channel"; }
   };
 
   class channel_already_closed : public std::logic_error {
@@ -94,9 +94,9 @@ inline namespace concurrent {
   public:
     channel() : state(std::make_shared<detail::channel_state<T>>()) {}
 
-    sender<T> get_sender() const { return sender<T>{state}; }
-    receiver<T> get_receiver() const { return receiver<T>{state}; }
-    channel_closer get_closer() const { return channel_closer{state}; }
+    auto get_sender() const -> sender<T> { return sender<T>{state}; }
+    auto get_receiver() const -> receiver<T> { return receiver<T>{state}; }
+    auto get_closer() const -> channel_closer { return channel_closer{state}; }
 
     void push(const T &x) {
       {
@@ -152,7 +152,7 @@ inline namespace concurrent {
   public:
     sender() {}
 
-    bool avail() const { return state.use_count() != 0; }
+    auto avail() const -> bool { return state.use_count() != 0; }
 
     void push(const T &x) {
       {
@@ -183,7 +183,7 @@ inline namespace concurrent {
       }
       state->notifier.notify_all();
     }
-    bool is_closed() const {
+    auto is_closed() const -> bool {
       std::lock_guard{state->data_mutex};
       return state->is_closed_v;
     }
@@ -217,9 +217,9 @@ inline namespace concurrent {
     receiver(receiver &&) = default;
     receiver &operator=(receiver &&) = default;
 
-    bool avail() const { return state.use_count() != 0; }
+    auto avail() const -> bool { return state.use_count() != 0; }
 
-    T next() {
+    auto next() -> T {
       std::unique_lock lock{state->data_mutex};
       state->notifier.wait(lock, [this] {
         auto next = iterator;
@@ -235,14 +235,16 @@ inline namespace concurrent {
       return **iterator;
     }
 
-    std::optional<T> operator*() {
+    auto operator*() -> std::optional<T> {
       std::lock_guard lock{state->data_mutex};
       return *iterator;
     }
 
-    shared_receiver<T> share() { return shared_receiver<T>{std::move(*this)}; }
+    auto share() -> shared_receiver<T> {
+      return shared_receiver<T>{std::move(*this)};
+    }
 
-    bool is_closed() const {
+    auto is_closed() const -> bool {
       std::lock_guard{state->data_mutex};
       return state->is_closed_v;
     }
@@ -256,10 +258,10 @@ inline namespace concurrent {
     shared_receiver(receiver<T> &&receiver_)
         : receiver_(std::make_shared<receiver<T>>(std::move(receiver_))) {}
 
-    T next() { return receiver_->next(); }
+    auto next() -> T { return receiver_->next(); }
     auto operator*() { return receiver_->operator*(); }
 
-    bool is_closed() const { return receiver_->is_closed_v; }
+    auto is_closed() const -> bool { return receiver_->is_closed_v; }
   };
 
   class scheduler {

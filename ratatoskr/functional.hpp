@@ -101,7 +101,7 @@ inline namespace functional {
       using two_function_composition<mapping<F, G>>::two_function_composition;
 
       template <class T>
-      constexpr decltype(auto) operator()(T &&x) {
+      constexpr auto operator()(T &&x) -> decltype(auto) {
         return std::invoke(this->g, std::invoke(this->f, std::forward<T>(x)));
       }
     };
@@ -130,7 +130,7 @@ inline namespace functional {
       using two_function_composition<filtering<F, G>>::two_function_composition;
 
       template <class T>
-      constexpr decltype(auto) operator()(T &&x) {
+      constexpr auto operator()(T &&x) -> decltype(auto) {
         return std::invoke(this->f, x)
                    ? std::invoke(this->g, std::forward<T>(x))
                    : std::nullopt;
@@ -164,7 +164,7 @@ inline namespace functional {
           try_mapping<F, G>>::two_function_composition;
 
       template <class T>
-      constexpr decltype(auto) operator()(T &&x) {
+      constexpr auto operator()(T &&x) -> decltype(auto) {
         std::optional result = std::invoke(this->f, std::forward<T>(x));
         return result ? std::invoke(this->g, *result) : std::nullopt;
       }
