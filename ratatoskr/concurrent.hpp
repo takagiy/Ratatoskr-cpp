@@ -26,6 +26,9 @@ inline namespace concurrent {
 
       channel_state()
           : is_closed_v(false), data{std::nullopt}, last(data.begin()) {}
+
+      channel_state(const channel_state &) = delete;
+      channel_state(channel_state &&) = delete;
     };
   } // namespace detail
 
@@ -46,6 +49,7 @@ inline namespace concurrent {
   class scheduler;
 
   class close_channel : public std::exception {
+    using std::exception::exception;
     auto what() const noexcept -> const char * { return "close_channel"; }
   };
 
@@ -78,6 +82,10 @@ inline namespace concurrent {
     std::condition_variable &notifier;
 
   public:
+    channel_closer() = default;
+    channel_closer(const channel_closer &) = default;
+    channel_closer(channel_closer &&) = default;
+
     void close() const {
       {
         std::lock_guard lock{data_mutex};
@@ -93,6 +101,8 @@ inline namespace concurrent {
 
   public:
     channel() : state(std::make_shared<detail::channel_state<T>>()) {}
+    channel(const channel<T> &) = default;
+    channel(channel<T> &&) = default;
 
     auto get_sender() const -> sender<T> { return sender<T>{state}; }
     auto get_receiver() const -> receiver<T> { return receiver<T>{state}; }
@@ -150,7 +160,9 @@ inline namespace concurrent {
     }
 
   public:
-    sender() {}
+    sender() = default;
+    sender(const sender<T> &) = default;
+    sender(sender<T> &&) = default;
 
     auto avail() const -> bool { return state.use_count() != 0; }
 
@@ -210,7 +222,7 @@ inline namespace concurrent {
       }
     }
 
-    receiver() {}
+    receiver() = default;
 
     receiver(const receiver &) = delete;
     receiver &operator=(const receiver &) = delete;
@@ -257,6 +269,8 @@ inline namespace concurrent {
   public:
     shared_receiver(receiver<T> &&receiver_)
         : receiver_(std::make_shared<receiver<T>>(std::move(receiver_))) {}
+    shared_receiver(const shared_receiver<T> &) = default;
+    shared_receiver(shared_receiver<T> &&) = default;
 
     auto next() -> T { return receiver_->next(); }
     auto operator*() { return receiver_->operator*(); }
@@ -273,6 +287,10 @@ inline namespace concurrent {
 
   public:
     scheduler() : is_closed_v(false) {}
+    scheduler(const scheduler &) = delete;
+    scheduler &operator=(const scheduler &) = delete;
+    scheduler(scheduler &&) = delete;
+    scheduler &operator=(scheduler &&) = delete;
 
     void halt() {
       {
