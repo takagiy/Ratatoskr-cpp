@@ -100,6 +100,9 @@ inline namespace functional {
     public:
       using two_function_composition<mapping<F, G>>::two_function_composition;
 
+      mapping(const mapping<F, G> &) = default;
+      mapping(mapping<F, G> &&) = default;
+
       template <class T>
       constexpr auto operator()(T &&x) -> decltype(auto) {
         return std::invoke(this->g, std::invoke(this->f, std::forward<T>(x)));
@@ -111,6 +114,9 @@ inline namespace functional {
     public:
       using two_function_composition<
           mapping<F, void>>::two_function_composition;
+
+      mapping(const mapping<F, void> &) = default;
+      mapping(mapping<F, void> &&) = default;
 
       template <class T>
       constexpr auto operator()(T &&x) {
@@ -129,6 +135,9 @@ inline namespace functional {
     public:
       using two_function_composition<filtering<F, G>>::two_function_composition;
 
+      filtering(const filtering<F, G> &) = default;
+      filtering(filtering<F, G> &&) = default;
+
       template <class T>
       constexpr auto operator()(T &&x) -> decltype(auto) {
         return std::invoke(this->f, x)
@@ -143,6 +152,9 @@ inline namespace functional {
     public:
       using two_function_composition<
           filtering<F, void>>::two_function_composition;
+
+      filtering(const filtering<F, void> &) = default;
+      filtering(filtering<F, void> &&) = default;
 
       template <class T>
       constexpr auto operator()(T &&x) {
@@ -163,6 +175,9 @@ inline namespace functional {
       using two_function_composition<
           try_mapping<F, G>>::two_function_composition;
 
+      try_mapping(const try_mapping<F, G> &) = default;
+      try_mapping(try_mapping<F, G> &&) = default;
+
       template <class T>
       constexpr auto operator()(T &&x) -> decltype(auto) {
         std::optional result = std::invoke(this->f, std::forward<T>(x));
@@ -176,6 +191,9 @@ inline namespace functional {
     public:
       using two_function_composition<
           try_mapping<F, void>>::two_function_composition;
+
+      try_mapping(const try_mapping<F, void> &) = default;
+      try_mapping(try_mapping<F, void> &&) = default;
 
       template <class T>
       constexpr auto operator()(T &&x) {
@@ -201,6 +219,9 @@ inline namespace functional {
     constexpr thunk(const F &f_) : f(f_) {}
     constexpr thunk(F &&f_) : f(std::move(f_)) {}
 
+    thunk(const thunk<F> &) = default;
+    thunk(thunk<F> &&) = default;
+
     template <class T>
     constexpr auto operator()(T &&x) {
       return std::invoke(f, std::forward<T>(x));
@@ -215,7 +236,9 @@ inline namespace functional {
   template <>
   class thunk<void> : public detail::composable<thunk<void>> {
   public:
-    constexpr thunk() {}
+    thunk() = default;
+    thunk(const thunk<void> &) = default;
+    thunk(thunk<void> &&) = default;
 
     template <class T>
     constexpr auto operator()(T &&x) {
