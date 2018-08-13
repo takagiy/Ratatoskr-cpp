@@ -29,19 +29,19 @@ inline namespace functional {
     class composable {
     public:
       template <class F>
-      constexpr auto map(F &&f) const {
+      [[nodiscard]] constexpr auto map(F &&f) const {
         return static_cast<const T *>(this)->compose(
             mapping{std::forward<F>(f)});
       };
 
       template <class F>
-      constexpr auto filter(F &&f) const {
+      [[nodiscard]] constexpr auto filter(F &&f) const {
         return static_cast<const T *>(this)->compose(
             filtering{std::forward<F>(f)});
       }
 
       template <class F>
-      constexpr auto then(F &&f) const {
+      [[nodiscard]] constexpr auto then(F &&f) const {
         return static_cast<const T *>(this)->compose(
             mapping{[f = std::forward<F>(f)](auto &&x) {
               std::invoke(f, x);
@@ -50,23 +50,23 @@ inline namespace functional {
       }
 
       template <class F>
-      constexpr auto try_map(F &&f) const {
+      [[nodiscard]] constexpr auto try_map(F &&f) const {
         return static_cast<const T *>(this)->compose(
             try_mapping{std::forward<F>(f)});
       }
 
       template <class F>
-      constexpr auto map(F &&f) {
+      [[nodiscard]] constexpr auto map(F &&f) {
         return static_cast<T *>(this)->compose(mapping{std::forward<F>(f)});
       };
 
       template <class F>
-      constexpr auto filter(F &&f) {
+      [[nodiscard]] constexpr auto filter(F &&f) {
         return static_cast<T *>(this)->compose(filtering{std::forward<F>(f)});
       }
 
       template <class F>
-      constexpr auto then(F &&f) {
+      [[nodiscard]] constexpr auto then(F &&f) {
         return static_cast<T *>(this)->compose(
             mapping{[f = std::forward<F>(f)](auto &&x) {
               std::invoke(f, x);
@@ -75,7 +75,7 @@ inline namespace functional {
       }
 
       template <class F>
-      constexpr auto try_map(F &&f) {
+      [[nodiscard]] constexpr auto try_map(F &&f) {
         return static_cast<T *>(this)->compose(try_mapping{std::forward<F>(f)});
       }
     };
@@ -98,7 +98,7 @@ inline namespace functional {
           : f(std::move(f_)), g(g_) {}
 
       template <class H>
-      constexpr auto compose(H &&h) const {
+      [[nodiscard]] constexpr auto compose(H &&h) const {
         return Composable{f, g.compose(std::forward<H>(h))};
       }
     };
@@ -114,7 +114,7 @@ inline namespace functional {
       constexpr two_function_composition(F &&f_) : f(std::move(f_)) {}
 
       template <class G>
-      constexpr auto compose(G &&g) const {
+      [[nodiscard]] constexpr auto compose(G &&g) const {
         return Composable{f, std::forward<G>(g)};
       }
     };
@@ -252,7 +252,7 @@ inline namespace functional {
     }
 
     template <class G>
-    constexpr auto compose(G &&g) const {
+    [[nodiscard]] constexpr auto compose(G &&g) const {
       return functional::thunk{f.compose(std::forward<G>(g))};
     }
   };
@@ -270,7 +270,7 @@ inline namespace functional {
     }
 
     template <class F>
-    constexpr auto compose(F &&f) const {
+    [[nodiscard]] constexpr auto compose(F &&f) const {
       return functional::thunk{std::forward<F>(f)};
     }
   };
