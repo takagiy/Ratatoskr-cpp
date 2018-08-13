@@ -253,6 +253,65 @@ inline namespace functional {
 
   thunk()->thunk<void>;
 
+  template <class... Fs>
+  class bundle {
+    std::tuple<Fs...> fs;
+
+    template <std::size_t... I, class... Ts>
+    constexpr auto results_for_impl(std::index_sequence<I...>, Ts &&... xs) {
+      return std::forward_as_tuple(
+          std::get<I>(fs)(xs...)...,
+          std::get<size - 1>(fs)(std::forward<Ts>(xs)...));
+    }
+
+    template <std::size_t... I, class... Ts>
+    constexpr void apply_impl(std::index_sequence<I...>, Ts &&... xs) {
+      (std::get<I>(fs)(xs...), ...);
+      std::get<size - 1>(fs)(std::forward<Ts>(xs)...);
+    }
+
+    template <class F>
+    static auto as_tuple_(F f) {
+      return std::tuple<>{f};
+    }
+
+    template <class... Fs_>
+    static auto as_tuple_(const bundle<Fs_...> &fs) {
+      return fs.as_tuple();
+    }
+    template <class... Fs_>
+    static auto as_tuple_(bundle<Fs_...> &&fs) {
+      return std::move(fs).as_tuple();
+    }
+
+  public:
+    static constexpr size_t size = sizeof...(Fs);
+
+    constexpr bundle(Fs... fs) : fs(fs...) {}
+    constexpr bundle(std::tuple<Fs...> fs) : fs(fs) {}
+
+    template <class... Ts>
+    [[nodiscard]] constexpr auto results_for(Ts &&... xs) {
+      return results_for_impl(std::make_index_sequence<size - 1>{},
+                              std::forward<Ts>(xs)...);
+    }
+
+    template <class... Ts>
+    constexpr void operator()(Ts &&... xs) {
+      apply_impl(std::make_index_sequence<size - 1>{}, std::forward<Ts>(xs)...);
+    }
+
+    [[nodiscard]] constexpr auto as_tuple() const & -> auto & { return fs; }
+    [[nodiscard]] constexpr auto as_tuple() const && -> auto & { return fs; }
+    [[nodiscard]] constexpr auto to_tuple() const { return fs; }
+
+    template <class... Gs>
+    constexpr auto bundle_with(Gs &&... gs) {
+      return rat::bundle{
+          std::tuple_cat(fs, as_tuple_(std::forward<Gs>(gs))...)};
+    }
+  };
+
 } // namespace functional
 } // namespace rat
 #endif
