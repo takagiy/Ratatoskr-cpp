@@ -86,6 +86,8 @@ inline namespace concurrent {
     channel_closer(const channel_closer &) = default;
     channel_closer(channel_closer &&) = default;
 
+    auto valid() const -> bool { return static_cast<bool>(reference_counter); }
+
     void close() const {
       {
         std::lock_guard lock{data_mutex};
@@ -107,6 +109,8 @@ inline namespace concurrent {
     auto get_sender() const -> sender<T> { return sender<T>{state}; }
     auto get_receiver() const -> receiver<T> { return receiver<T>{state}; }
     auto get_closer() const -> channel_closer { return channel_closer{state}; }
+
+    auto valid() const -> bool { return static_cast<bool>(state); }
 
     void push(const T &x) {
       {
@@ -164,7 +168,7 @@ inline namespace concurrent {
     sender(const sender<T> &) = default;
     sender(sender<T> &&) = default;
 
-    auto avail() const -> bool { return state.use_count() != 0; }
+    auto valid() const -> bool { return static_cast<bool>(state); }
 
     void push(const T &x) {
       {
@@ -229,7 +233,7 @@ inline namespace concurrent {
     receiver(receiver &&) = default;
     receiver &operator=(receiver &&) = default;
 
-    auto avail() const -> bool { return state.use_count() != 0; }
+    auto valid() const -> bool { return static_cast<bool>(state); }
 
     auto next() -> T {
       std::unique_lock lock{state->data_mutex};
