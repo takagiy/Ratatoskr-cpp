@@ -272,7 +272,7 @@ inline namespace functional {
 
     template <class F>
     static auto as_tuple_(F f) {
-      return std::tuple<>{f};
+      return std::tuple{f};
     }
 
     template <class... Fs_>
