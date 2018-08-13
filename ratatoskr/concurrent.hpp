@@ -41,9 +41,6 @@ inline namespace concurrent {
   template <class T>
   class receiver;
 
-  template <class T>
-  class shared_receiver;
-
   class channel_closer;
 
   class scheduler;
@@ -61,12 +58,11 @@ inline namespace concurrent {
     using std::logic_error::logic_error;
   };
 
-  struct with_shared_receiver_t {
-    explicit with_shared_receiver_t() = default;
+  struct sharing_receiver_t {
+    explicit sharing_receiver_t() = default;
   };
 
-  inline constexpr with_shared_receiver_t with_shared_receiver =
-      with_shared_receiver_t();
+  inline constexpr sharing_receiver_t sharing_receiver = sharing_receiver_t();
 
   class channel_closer {
     template <class T>
@@ -256,30 +252,14 @@ inline namespace concurrent {
       return *iterator;
     }
 
-    auto share() -> shared_receiver<T> {
-      return shared_receiver<T>{std::move(*this)};
+    auto share() -> std::shared_ptr<receiver<T>> {
+      return std::make_shared<receiver<T>>(std::move(*this));
     }
 
     auto is_closed() const -> bool {
       std::lock_guard{state->data_mutex};
       return state->is_closed_v;
     }
-  };
-
-  template <class T>
-  class shared_receiver {
-    std::shared_ptr<receiver<T>> receiver_;
-
-  public:
-    shared_receiver(receiver<T> &&receiver_)
-        : receiver_(std::make_shared<receiver<T>>(std::move(receiver_))) {}
-    shared_receiver(const shared_receiver<T> &) = default;
-    shared_receiver(shared_receiver<T> &&) = default;
-
-    auto next() -> T { return receiver_->next(); }
-    auto operator*() { return receiver_->operator*(); }
-
-    auto is_closed() const -> bool { return receiver_->is_closed_v; }
   };
 
   class scheduler {
@@ -305,6 +285,15 @@ inline namespace concurrent {
         }
       }
       cv.notify_all();
+    }
+
+    void connect(std::thread &&th) {
+      std::lock_guard lock{m};
+      if (is_closed_v) {
+        th.join();
+        return;
+      }
+      threads.emplace_front(std::move(th));
     }
 
     void connect(std::thread &&th, const rat::channel_closer &closer) {
@@ -371,7 +360,7 @@ inline namespace concurrent {
   }
 
   template <class T>
-  auto make_channel(with_shared_receiver_t) {
+  auto make_channel(sharing_receiver_t) {
     channel<T> ch;
     return std::pair{ch.get_sender(), ch.get_receiver().share()};
   }
