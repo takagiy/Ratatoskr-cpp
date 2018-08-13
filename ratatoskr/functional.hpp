@@ -54,6 +54,30 @@ inline namespace functional {
         return static_cast<const T *>(this)->compose(
             try_mapping{std::forward<F>(f)});
       }
+
+      template <class F>
+      constexpr auto map(F &&f) {
+        return static_cast<T *>(this)->compose(mapping{std::forward<F>(f)});
+      };
+
+      template <class F>
+      constexpr auto filter(F &&f) {
+        return static_cast<T *>(this)->compose(filtering{std::forward<F>(f)});
+      }
+
+      template <class F>
+      constexpr auto then(F &&f) {
+        return static_cast<T *>(this)->compose(
+            mapping{[f = std::forward<F>(f)](auto &&x) {
+              std::invoke(f, x);
+              return x;
+            }});
+      }
+
+      template <class F>
+      constexpr auto try_map(F &&f) {
+        return static_cast<T *>(this)->compose(try_mapping{std::forward<F>(f)});
+      }
     };
 
     template <template <class, class> class Composable, class F, class G>
@@ -292,13 +316,21 @@ inline namespace functional {
 
     template <class... Ts>
     [[nodiscard]] constexpr auto results_for(Ts &&... xs) {
-      return results_for_impl(std::make_index_sequence<size - 1>{},
-                              std::forward<Ts>(xs)...);
+      if constexpr (size > 0) {
+        return results_for_impl(std::make_index_sequence<size - 1>{},
+                                std::forward<Ts>(xs)...);
+      }
+      else {
+        return std::tuple<>{};
+      }
     }
 
     template <class... Ts>
     constexpr void operator()(Ts &&... xs) {
-      apply_impl(std::make_index_sequence<size - 1>{}, std::forward<Ts>(xs)...);
+      if constexpr (size > 0) {
+        apply_impl(std::make_index_sequence<size - 1>{},
+                   std::forward<Ts>(xs)...);
+      }
     }
 
     [[nodiscard]] constexpr auto as_tuple() const & -> auto & { return fs; }
