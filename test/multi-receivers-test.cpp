@@ -16,7 +16,7 @@ int main() {
               << std::endl;
   };
 
-  auto [sn, rc] = make_channel<int>(with_shared_receiver);
+  auto [sn, rc] = make_channel<int>(sharing_receiver);
 
   auto produce = [&log](auto sn) {
     for (int i = 0; i < 10; ++i) {
@@ -31,7 +31,7 @@ int main() {
   auto consume = [&log](auto rc) {
     try {
       while (true) {
-        log("receive", rc.next());
+        log("receive", rc->next());
       }
     }
     catch (const close_channel &) {
