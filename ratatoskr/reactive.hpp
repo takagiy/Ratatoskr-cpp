@@ -33,13 +33,13 @@ inline namespace reactive {
                          thunk.compose(f), finalizer};
     }
 
-    rat::receiver<Source> receiver;
+    typename Source::receiver_type receiver;
     rat::channel_closer closer;
 
     rat::thunk<Th> thunk;
     rat::bundle<Fins...> finalizer;
 
-    signal(rat::receiver<Source> &&rc, rat::channel_closer &&cl,
+    signal(typename Source::receiver_type &&rc, rat::channel_closer &&cl,
            const rat::thunk<Th> &th, const rat::bundle<Fins...> &fi)
         : receiver(std::move(rc)), closer(std::move(cl)), thunk(th),
           finalizer(fi) {}
@@ -49,7 +49,7 @@ inline namespace reactive {
     signal(const Self &) = delete;
     signal(Self &&) = default;
     Self &operator=(const Self &) = delete;
-    signal(const rat::channel<Source> &ch)
+    signal(const Source &ch)
         : receiver(ch.get_receiver()), closer(ch.get_closer()) {}
 
     template <class F>
@@ -121,12 +121,12 @@ inline namespace reactive {
   };
 
   template <class Source>
-  signal(rat::channel<Source>)->signal<Source, rat::thunk<void>, rat::bundle<>>;
+  signal(Source)->signal<Source, rat::thunk<void>, rat::bundle<>>;
 
-  template <class Source, class Th, class... Fins>
-  signal(rat::receiver<Source>, rat::channel_closer, rat::thunk<Th>,
-         rat::bundle<Fins...>)
-      ->signal<Source, rat::thunk<Th>, rat::bundle<Fins...>>;
+  template <class Receiver, class Th, class... Fins>
+  signal(Receiver, rat::channel_closer, rat::thunk<Th>, rat::bundle<Fins...>)
+      ->signal<typename Receiver::channel_type, rat::thunk<Th>,
+               rat::bundle<Fins...>>;
 
 } // namespace reactive
 } // namespace rat
