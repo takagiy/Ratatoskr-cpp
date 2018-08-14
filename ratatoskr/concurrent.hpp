@@ -98,6 +98,10 @@ inline namespace concurrent {
     std::shared_ptr<detail::channel_state<T>> state;
 
   public:
+    using receiver_type = receiver<T>;
+    using sender_type = sender<T>;
+    using value_type = T;
+
     channel() : state(std::make_shared<detail::channel_state<T>>()) {}
     channel(const channel<T> &) = default;
     channel(channel<T> &&) = default;
@@ -160,6 +164,9 @@ inline namespace concurrent {
     }
 
   public:
+    using channel_type = channel<T>;
+    using value_type = T;
+
     sender() = default;
     sender(const sender<T> &) = default;
     sender(sender<T> &&) = default;
@@ -203,10 +210,12 @@ inline namespace concurrent {
 
   template <class T>
   class receiver {
+    template <class T_>
+    friend class channel;
+
     std::shared_ptr<detail::channel_state<T>> state;
     typename std::forward_list<std::optional<T>>::iterator iterator;
 
-  public:
     receiver(const std::shared_ptr<detail::channel_state<T>> &state)
         : state(state),
           iterator((std::lock_guard{state->data_mutex}, state->last)) {
@@ -222,8 +231,11 @@ inline namespace concurrent {
       }
     }
 
-    receiver() = default;
+  public:
+    using channel_type = channel<T>;
+    using value_type = T;
 
+    receiver() = default;
     receiver(const receiver &) = delete;
     receiver &operator=(const receiver &) = delete;
     receiver(receiver &&) = default;
