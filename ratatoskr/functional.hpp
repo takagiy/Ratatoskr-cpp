@@ -310,8 +310,9 @@ inline namespace functional {
 
   public:
     static constexpr size_t size = sizeof...(Fs);
-
-    constexpr bundle(Fs... fs) : fs(fs...) {}
+    bundle(const bundle<Fs...> &) = default;
+    bundle(bundle<Fs...> &&) = default;
+    constexpr bundle(Fs... fs) : fs(std::tuple_cat(as_tuple_(fs)...)) {}
     constexpr bundle(std::tuple<Fs...> fs) : fs(fs) {}
 
     template <class... Ts>
