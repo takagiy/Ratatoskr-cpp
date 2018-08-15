@@ -64,10 +64,6 @@ inline namespace reactive {
       if (!receiver.valid()) {
         throw std::logic_error{"Running signal that has been invalid."};
       }
-      if (receiver.is_closed()) {
-        finalizer();
-        return;
-      }
 
       try {
         while (true) {
@@ -120,6 +116,15 @@ inline namespace reactive {
 
       sch.connect(ths, closer);
     }
+
+    auto next() -> std::optional<value_type> {
+      try {
+        return std::optional{receiver.next()};
+      }
+      catch (const rat::close_channel &) {
+        return std::nullopt;
+      }
+    }
   };
 
   template <class Source>
@@ -153,6 +158,24 @@ inline namespace reactive {
 
     std::tuple<Sources...> sources;
     std::tuple<typename Sources::value_type...> values;
+
+    signal(std::tuple<Sources...> &&srcs, const rat::thunk<Th> &th,
+           const rat::bundle<Fins...> &fi)
+        : sources(std::move(srcs)), thunk(th), finalizer(fi) {}
+
+  public:
+    signal() = default;
+    signal(const Self &) = delete;
+    signal(Self &&) = default;
+    Self &operator=(Self &&) = delete;
+
+    signal(std::tuple<Sources...> &&srcs) : sources(std::move(srcs)) {}
+
+    template <class F>
+    [[nodiscard]] auto finally(F &&f) {
+      return rat::signal{std::move(sources), thunk,
+                         finalizer.bundle_with(std::forward<F>(f))};
+    }
   };
 
   template <class... Sources, class Th, class... Fins>
