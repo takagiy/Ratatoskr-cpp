@@ -30,7 +30,7 @@ inline namespace reactive {
     template <class F>
     [[nodiscard]] auto compose(F &&f) {
       return rat::signal{std::move(receiver), std::move(closer),
-                         thunk.compose(f), finalizer};
+                         thunk.compose(std::forward<F>(f)), finalizer};
     }
 
     typename Source::receiver_type receiver;
@@ -45,6 +45,8 @@ inline namespace reactive {
           finalizer(fi) {}
 
   public:
+    using value_type = decltype(thunk(std::declval<Source::value_type>()));
+
     signal() = default;
     signal(const Self &) = delete;
     signal(Self &&) = default;
@@ -53,9 +55,9 @@ inline namespace reactive {
         : receiver(ch.get_receiver()), closer(ch.get_closer()) {}
 
     template <class F>
-    [[nodiscard]] auto finally(F f) {
+    [[nodiscard]] auto finally(F &&f) {
       return rat::signal{std::move(receiver), std::move(closer), thunk,
-                         finalizer.bundle_with(f)};
+                         finalizer.bundle_with(std::forward<F>(f))};
     }
 
     void run() {
@@ -127,6 +129,35 @@ inline namespace reactive {
   signal(Receiver, rat::channel_closer, rat::thunk<Th>, rat::bundle<Fins...>)
       ->signal<typename Receiver::channel_type, rat::thunk<Th>,
                rat::bundle<Fins...>>;
+
+  template <class... Sources, class Th, class... Fins>
+  class signal<std::tuple<Sources...>, rat::thunk<Th>, rat::bundle<Fins...>>
+      : public rat::functional::detail::composable<signal<
+            std::tuple<Sources...>, rat::thunk<Th>, rat::bundle<Fins...>>> {
+
+    using Self =
+        signal<std::tuple<Sources...>, rat::thunk<Th>, rat::bundle<Fins...>>;
+
+    friend class rat::functional::detail::composable<Self>;
+    template <class Source_, class Thunk_, class Finalizer_>
+    friend class signal;
+
+    template <class F>
+    [[nodiscard]] auto compose(F &&f) {
+      return rat::signal{std::move(sources), thunk.compose(std::forward<F>(f)),
+                         finalizer};
+    }
+
+    rat::thunk<Th> thunk;
+    rat::bundle<Fins...> finalizer;
+
+    std::tuple<Sources...> sources;
+    std::tuple<typename Sources::value_type...> values;
+  };
+
+  template <class... Sources, class Th, class... Fins>
+  signal(std::tuple<Sources...>, rat::thunk<Th>, rat::bundle<Fins...>)
+      ->signal<std::tuple<Sources...>, rat::thunk<Th>, rat::bundle<Fins...>>;
 
 } // namespace reactive
 } // namespace rat
