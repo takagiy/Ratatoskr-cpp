@@ -2,6 +2,7 @@
 #include "../test.hpp"
 #include <algorithm>
 #include <chrono>
+#include <mutex>
 #include <thread>
 #include <vector>
 
@@ -46,15 +47,20 @@ void one_vs_n() {
     auto [sn, rc] = rat::make_channel<typename decltype(input)::value_type>(
         rat::sharing_receiver);
 
+    std::mutex mutex_for_output;
     decltype(input) output;
     std::vector<std::thread> consumers;
 
     for (int i = 0; i < 10; ++i) {
       consumers.emplace_back(
-          [&output](auto rc) {
+          [&output, &mutex_for_output](auto rc) {
             try {
               while (true) {
-                output.push_back(rc->next());
+                auto next = rc->next();
+                {
+                  std::lock_guard lock{mutex_for_output};
+                  output.push_back(next);
+                }
               }
             }
             catch (const rat::close_channel &) {
