@@ -29,14 +29,16 @@ inline namespace trivial {
     void for_each(Tuple &&t, F f) {
       detail::for_each_impl(
           std::forward<Tuple>(t), f,
-          std::make_index_sequence<std::tuple_size_v<Tuple>>{});
+          std::make_index_sequence<
+              std::tuple_size_v<std::remove_reference_t<Tuple>>>{});
     }
 
     template <class Tuple, class F>
     auto transform(Tuple &&t, F f) {
       return detail::transform_impl(
           std::forward<Tuple>(t), f,
-          std::make_index_sequence<std::tuple_size_v<Tuple>>{});
+          std::make_index_sequence<
+              std::tuple_size_v<std::remove_reference_t<Tuple>>>{});
     }
   }; // namespace tuples
 
