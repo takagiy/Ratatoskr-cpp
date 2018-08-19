@@ -1,5 +1,6 @@
 #include "./concurrent.hpp"
 #include "./functional.hpp"
+#include "./trvial.hpp"
 #include <atomic>
 #include <forward_list>
 #include <memory>
@@ -45,7 +46,8 @@ inline namespace reactive {
           finalizer(fi) {}
 
   public:
-    using value_type = decltype(thunk(std::declval<Source::value_type>()));
+    using value_type =
+        decltype(thunk(std::declval<typename Source::value_type>()));
 
     signal() = default;
     signal(const Self &) = delete;
@@ -175,6 +177,16 @@ inline namespace reactive {
     [[nodiscard]] auto finally(F &&f) {
       return rat::signal{std::move(sources), thunk,
                          finalizer.bundle_with(std::forward<F>(f))};
+    }
+
+    void run_on(rat::scheduler &sch) {
+      auto is_finalized = std::make_shared<std::atomic_bool>(false);
+
+      rat::tuples::for_each(sources, [&sch](auto &&src) {
+        sch.connect(
+            std::thread([thunk = src.thunk, finalizer = src.finalizer]() {}),
+            src.closer);
+      });
     }
   };
 
