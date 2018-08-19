@@ -35,10 +35,10 @@ void one_vs_one() {
     return output;
   };
 
-  std::vector v1 = {1,  2,  4, 5, 6, 7, 6, 7, 6,    4, 3,  52, 256, 2,  52,
-                    44, 24, 1, 3, 2, 4, 1, 1, 4131, 4, 13, 21, 1,   34, 3};
+  std::vector input = {1,  2,  4, 5, 6, 7, 6, 7, 6,    4, 3,  52, 256, 2,  52,
+                       44, 24, 1, 3, 2, 4, 1, 1, 4131, 4, 13, 21, 1,   34, 3};
 
-  test::check(one_vs_one_test, v1, v1);
+  test::check(one_vs_one_test, input, input);
 }
 
 void one_vs_n() {
@@ -82,13 +82,15 @@ void one_vs_n() {
     return output;
   };
 
-  std::vector v1 = {1,  2,  4, 5, 6, 7, 6, 7, 6,    4, 3,  52, 256, 2,  52,
-                    44, 24, 1, 3, 2, 4, 1, 1, 4131, 4, 13, 21, 1,   34, 3};
+  std::vector input = {1,  2,  4, 5, 6, 7, 6, 7, 6,    4, 3,  52, 256, 2,  52,
+                       44, 24, 1, 3, 2, 4, 1, 1, 4131, 4, 13, 21, 1,   34, 3};
 
-  std::vector expected = v1;
-  std::sort(expected.begin(), expected.end());
+  std::vector expected = [](auto input) {
+    std::sort(input.begin(), input.end());
+    return input;
+  }(input);
 
-  test::check(one_vs_n_test, v1, expected);
+  test::check(one_vs_n_test, input, expected);
 }
 
 int main() {
