@@ -38,16 +38,46 @@ namespace detail {
   constexpr auto iterate() {
     return check_iterate<T>(nullptr);
   }
+
+  template <class T>
+  constexpr auto check_tuple_like(std::nullptr_t)
+      -> decltype(std::tuple_size_v<std::remove_reference_t<T>>, bool{}) {
+    return true;
+  }
+
+  template <class T>
+  constexpr auto check_tuple_like(...) {
+    return false;
+  }
+
+  template <class T>
+  constexpr auto tuple_like() {
+    return check_tuple_like<T>(nullptr);
+  }
+
+  template <class T>
+  constexpr auto string_like() {
+    return std::is_convertible_v<T, std::string>;
+  }
+
+  template <class...>
+  static constexpr bool false_v = false;
 } // namespace detail
 
 template <class T>
 auto stringfy(T &&object) -> std::string {
-
   std::stringstream ss;
 
-  if constexpr (detail::show<T &&>()) {
+  if constexpr (detail::string_like<T &&>()) {
+    ss << "\"";
+    ss << std::string{object};
+    ss << "\"";
+  }
+
+  else if constexpr (detail::show<T &&>()) {
     ss << object;
   }
+
   else if constexpr (detail::iterate<T &&>()) {
     ss << "[ ";
     for (auto &&element : object) {
@@ -56,28 +86,20 @@ auto stringfy(T &&object) -> std::string {
     ss << "]";
   }
 
-  return ss.str();
-}
+  else if constexpr (detail::tuple_like<T &&>()) {
+    ss << "{ ";
+    rat::trivial::tuples::for_each(
+        object, [&ss](auto &&element) { ss << stringfy(element) << " "; });
+    ss << "}";
+  }
 
-auto stringfy(const std::string string) -> std::string {
-  return "\"" + string + "\"";
-}
+  else {
+    static_assert(detail::false_v<T>,
+                  "test::stringfy : Can not stringfy the object.");
+  }
 
-auto stringfy(const char *c_string) -> std::string {
-  std::stringstream ss;
-  ss << "\"" << c_string << "\"";
   return ss.str();
-}
-
-template <class... Ts>
-auto stringfy(const std::tuple<Ts...> tuple) -> std::string {
-  std::stringstream ss;
-  ss << "{ ";
-  rat::trivial::tuples::for_each(
-      tuple, [&ss](auto &&element) { ss << stringfy(element) << " "; });
-  ss << "}";
-  return ss.str();
-}
+} // namespace test
 
 template <class Function, class Input>
 void check(Function test, Input input,
