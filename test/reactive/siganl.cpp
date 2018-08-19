@@ -38,11 +38,14 @@ void odd_to_string() {
                        41,  41,  5,    4,   4,     43, 3, 1,  31, 34, 34,
                        43,  13,  31,   4,   114,   1,  1, 41, 1,  3};
 
-  std::vector<std::string> expected;
-  for (auto n : input) {
-    if (n % 2 == 1)
-      expected.push_back(std::to_string(n));
-  }
+  std::vector<std::string> expected = [](auto input) {
+    std::vector<std::string> expected;
+    for (auto n : input) {
+      if (n % 2 == 1)
+        expected.push_back(std::to_string(n));
+    }
+    return expected;
+  }(input);
 
   test::check(test_odd_to_string, input, expected);
 }
